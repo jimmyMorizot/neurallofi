@@ -11,11 +11,8 @@ import type {
 } from '@/types';
 import { generateId } from '@/lib/utils';
 
-// Mock sample URLs
-const MOCK_SAMPLE_URLS = [
-  'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
-  'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3',
-];
+// Mock sample URL (single track per generation)
+const MOCK_SAMPLE_URL = 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3';
 
 interface UseGenerationOptions {
   onComplete?: () => void;
@@ -177,10 +174,7 @@ export function useGeneration(options: UseGenerationOptions = {}): UseGeneration
       setEta(0);
       addMessage('SEQUENCE COMPLETE', 'success');
 
-      const mockFiles = MOCK_SAMPLE_URLS.map((url, i) => ({
-        url,
-        version: i + 1,
-      }));
+      const mockFiles = [{ url: MOCK_SAMPLE_URL, version: 1 }];
       saveTracksToLocalStorage(taskId, style, mockFiles);
 
       toast.success('Track generated!', {
