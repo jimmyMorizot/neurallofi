@@ -1,7 +1,6 @@
 import type { MusicStyle, TextureType, GenerationStatus } from '@/types';
 import { buildPrompt } from '@/types';
-import { saveFile } from './filesystem';
-import { getTask, setTask, updateTask, type TaskData } from './taskCache';
+import { getTask, setTask, updateTask } from './taskCache';
 
 // MusicGPT API Configuration - Real API endpoints
 const MUSICGPT_API_URL = process.env.MUSICGPT_API_URL || 'https://api.musicgpt.com';
@@ -278,32 +277,19 @@ async function fetchConversionStatus(conversionId: string): Promise<{
 }
 
 /**
- * Download files from MusicGPT and save locally
+ * Return files with direct URLs (no local download - Vercel has read-only filesystem)
  */
 async function downloadAndSaveFiles(
   files: { url: string }[],
   taskId: string,
   style: MusicStyle
 ): Promise<{ url: string; version: number }[]> {
-  const savedFiles: { url: string; version: number }[] = [];
-
-  for (let i = 0; i < files.length; i++) {
-    const version = i + 1;
-
-    try {
-      const response = await fetch(files[i].url);
-      if (!response.ok) continue;
-
-      const buffer = Buffer.from(await response.arrayBuffer());
-      const localUrl = await saveFile(buffer, taskId, style, version);
-
-      savedFiles.push({ url: localUrl, version });
-    } catch (error) {
-      console.error(`Failed to download file ${i + 1}:`, error);
-    }
-  }
-
-  return savedFiles;
+  // On Vercel, we can't save files locally (read-only filesystem)
+  // Return direct URLs instead
+  return files.map((file, i) => ({
+    url: file.url,
+    version: i + 1,
+  }));
 }
 
 // Sample MP3 URLs for mock mode (royalty-free Lo-Fi samples)

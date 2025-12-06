@@ -2,7 +2,17 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
-import type { Track } from '@/types';
+import type { Track, MusicStyle } from '@/types';
+
+const STORAGE_KEY = 'neural-lofi-tracks';
+
+interface StoredTrack {
+  id: string;
+  title: string;
+  style: MusicStyle;
+  url: string;
+  createdAt: string;
+}
 
 interface UseLibraryReturn {
   tracks: Track[];
@@ -21,42 +31,47 @@ export function useLibrary(): UseLibraryReturn {
   const [isImporting, setIsImporting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchLibrary = useCallback(async () => {
+  const loadFromLocalStorage = useCallback(() => {
     try {
-      setIsLoading(true);
-      setError(null);
-
-      const response = await fetch('/api/library');
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch library');
+      const stored = localStorage.getItem(STORAGE_KEY);
+      if (stored) {
+        const storedTracks: StoredTrack[] = JSON.parse(stored);
+        // Convert to Track format
+        const converted: Track[] = storedTracks.map((t) => ({
+          id: t.id,
+          title: t.title,
+          style: t.style,
+          version: 1,
+          filename: t.id + '.mp3',
+          url: t.url,
+          date: new Date(t.createdAt),
+          size: 0,
+        }));
+        setTracks(converted);
       }
-
-      const data = await response.json();
-
-      // Convert date strings to Date objects
-      const tracksWithDates = data.map((track: Track & { date: string }) => ({
-        ...track,
-        date: new Date(track.date),
-      }));
-
-      setTracks(tracksWithDates);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unknown error');
-    } finally {
-      setIsLoading(false);
+      console.error('Error loading from localStorage:', err);
     }
   }, []);
 
+  const fetchLibrary = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+
+    // Load from localStorage (works on Vercel)
+    loadFromLocalStorage();
+
+    setIsLoading(false);
+  }, [loadFromLocalStorage]);
+
   const deleteTrack = useCallback(async (track: Track): Promise<boolean> => {
     try {
-      const response = await fetch(`/api/library/${encodeURIComponent(track.filename)}`, {
-        method: 'DELETE',
-      });
-
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || 'Failed to delete track');
+      // Remove from localStorage
+      const stored = localStorage.getItem(STORAGE_KEY);
+      if (stored) {
+        const storedTracks: StoredTrack[] = JSON.parse(stored);
+        const filtered = storedTracks.filter((t) => t.id !== track.id);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(filtered));
       }
 
       // Remove from local state
@@ -75,48 +90,19 @@ export function useLibrary(): UseLibraryReturn {
   }, []);
 
   const importTrack = useCallback(async (file: File): Promise<boolean> => {
-    try {
-      setIsImporting(true);
-
-      const formData = new FormData();
-      formData.append('file', file);
-
-      const response = await fetch('/api/library/import', {
-        method: 'POST',
-        body: formData,
-      });
-
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || 'Failed to import file');
-      }
-
-      toast.success('Track imported', {
-        description: file.name,
-      });
-
-      // Refresh library to show new track
-      await fetchLibrary();
-      return true;
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to import track';
-      toast.error('Import failed', {
-        description: message,
-      });
-      return false;
-    } finally {
-      setIsImporting(false);
-    }
-  }, [fetchLibrary]);
+    // Import is disabled on Vercel
+    toast.error('Import disabled', {
+      description: 'Use the AI generator to create tracks!',
+    });
+    return false;
+  }, []);
 
   const exportLibrary = useCallback(() => {
-    // Export library metadata as JSON
     const exportData = tracks.map((track) => ({
       id: track.id,
       title: track.title,
       style: track.style,
       version: track.version,
-      filename: track.filename,
       url: track.url,
       date: track.date.toISOString(),
     }));
@@ -141,6 +127,16 @@ export function useLibrary(): UseLibraryReturn {
   useEffect(() => {
     fetchLibrary();
   }, [fetchLibrary]);
+
+  // Listen for storage changes (when new tracks are added)
+  useEffect(() => {
+    const handleStorage = () => {
+      loadFromLocalStorage();
+    };
+
+    window.addEventListener('storage', handleStorage);
+    return () => window.removeEventListener('storage', handleStorage);
+  }, [loadFromLocalStorage]);
 
   return {
     tracks,
