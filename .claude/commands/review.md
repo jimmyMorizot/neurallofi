@@ -11,6 +11,11 @@ Effectue une revue de code approfondie selon les standards du projet.
 
 ## Checklist de revue
 
+### Conformité aux Spécifications
+- [ ] Fonctionnalités conformes à `.specs/spec.md`
+- [ ] Interface conforme à `.specs/maquette.html`
+- [ ] Implémentation technique conforme à `.specs/spec-nextjs.md`
+
 ### Architecture & Design
 - [ ] Respect des patterns Next.js App Router
 - [ ] Séparation des responsabilités (components, hooks, lib)
