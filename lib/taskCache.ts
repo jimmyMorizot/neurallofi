@@ -143,3 +143,41 @@ export async function cleanupOldTasks(): Promise<void> {
 
   await writeTasks(tasks);
 }
+
+/**
+ * Get all completed tracks for library display
+ */
+export async function getAllCompletedTracks(): Promise<Array<{
+  id: string;
+  title: string;
+  style: MusicStyle;
+  url: string;
+  createdAt: string;
+}>> {
+  // Use memory cache (works on Vercel serverless)
+  const tracks: Array<{
+    id: string;
+    title: string;
+    style: MusicStyle;
+    url: string;
+    createdAt: string;
+  }> = [];
+
+  for (const [taskId, task] of Object.entries(memoryCache)) {
+    if (task.status === 'completed' && task.files && task.files.length > 0) {
+      // Add each file as a separate track
+      for (const file of task.files) {
+        tracks.push({
+          id: `${taskId}_v${file.version}`,
+          title: `${task.style.charAt(0).toUpperCase() + task.style.slice(1)} Lo-Fi #${taskId.slice(0, 4)}`,
+          style: task.style,
+          url: file.url,
+          createdAt: task.createdAt,
+        });
+      }
+    }
+  }
+
+  // Sort by creation date (newest first)
+  return tracks.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+}
