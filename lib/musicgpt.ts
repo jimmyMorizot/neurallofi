@@ -308,9 +308,15 @@ async function downloadAndSaveFiles(
   return savedFiles;
 }
 
+// Sample MP3 URLs for mock mode (royalty-free Lo-Fi samples)
+const MOCK_SAMPLE_URLS = [
+  'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
+  'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3',
+];
+
 /**
  * Simulate mock generation for development
- * Uses sample MP3 files and copies them with proper naming
+ * Downloads sample MP3 files and saves them with proper naming
  */
 async function simulateMockGeneration(taskId: string, style: MusicStyle): Promise<void> {
   const steps = [
@@ -335,34 +341,13 @@ async function simulateMockGeneration(taskId: string, style: MusicStyle): Promis
     });
   }
 
-  // Copy sample files to create "generated" tracks
+  // Download sample files and save them locally
   try {
-    const { promises: fs } = await import('fs');
-    const path = await import('path');
-    const musicDir = path.join(process.cwd(), 'public/generated/music');
-
-    // Sample files to copy
-    const sampleFiles = [
-      { src: 'sample_classic_v1.mp3', dest: `${taskId}_${style}_v1.mp3` },
-      { src: 'sample_classic_v2.mp3', dest: `${taskId}_${style}_v2.mp3` },
-    ];
-
-    const savedFiles: { url: string; version: number }[] = [];
-
-    for (let i = 0; i < sampleFiles.length; i++) {
-      const srcPath = path.join(musicDir, sampleFiles[i].src);
-      const destPath = path.join(musicDir, sampleFiles[i].dest);
-
-      try {
-        await fs.copyFile(srcPath, destPath);
-        savedFiles.push({
-          url: `/generated/music/${sampleFiles[i].dest}`,
-          version: i + 1,
-        });
-      } catch (copyError) {
-        console.error(`[Mock] Failed to copy sample file:`, copyError);
-      }
-    }
+    const savedFiles = await downloadAndSaveFiles(
+      MOCK_SAMPLE_URLS.map(url => ({ url })),
+      taskId,
+      style
+    );
 
     if (savedFiles.length > 0) {
       taskStore.set(taskId, {
@@ -372,23 +357,14 @@ async function simulateMockGeneration(taskId: string, style: MusicStyle): Promis
         files: savedFiles,
       });
     } else {
-      // Fallback: use sample files directly if copy failed
-      taskStore.set(taskId, {
-        ...taskStore.get(taskId)!,
-        status: 'completed',
-        progress: 'Generation complete!',
-        files: [
-          { url: `/generated/music/sample_classic_v1.mp3`, version: 1 },
-          { url: `/generated/music/sample_classic_v2.mp3`, version: 2 },
-        ],
-      });
+      throw new Error('No files were saved');
     }
   } catch (error) {
     console.error('[Mock] Error in mock generation:', error);
     taskStore.set(taskId, {
       ...taskStore.get(taskId)!,
       status: 'failed',
-      error: 'Mock generation failed - sample files not found',
+      error: 'Mock generation failed - could not download sample files',
     });
   }
 }
