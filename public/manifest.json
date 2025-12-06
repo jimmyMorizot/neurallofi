@@ -1,0 +1,25 @@
+{
+  "name": "Neural Lofi",
+  "short_name": "Neural Lofi",
+  "description": "AI-powered Lo-Fi music generator. Create unique chill beats with Classic, Indian, African, Asian, and Latino styles.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#050511",
+  "theme_color": "#050511",
+  "orientation": "portrait-primary",
+  "categories": ["music", "entertainment"],
+  "icons": [
+    {
+      "src": "/icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    }
+  ]
+}

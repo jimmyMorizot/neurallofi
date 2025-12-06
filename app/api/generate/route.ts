@@ -24,9 +24,11 @@ export async function POST(request: NextRequest) {
 
     const validTextures = ['rain', 'vinyl', 'city', 'typing'];
     const textures = (body.textures || []).filter((t) => validTextures.includes(t));
+    const withVocals = body.withVocals || false;
+    const customLyrics = body.customLyrics?.trim().slice(0, 280) || undefined;
 
     // Generate music
-    const result = await generateMusic(body.style, textures);
+    const result = await generateMusic(body.style, textures, withVocals, customLyrics);
 
     const response: GenerationResponse = {
       taskId: result.taskId,

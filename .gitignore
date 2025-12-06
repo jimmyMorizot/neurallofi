@@ -44,3 +44,6 @@ next-env.d.ts
 # generated music files
 public/generated/music/*.mp3
 !public/generated/music/.gitkeep
+
+# task cache (serverless state persistence)
+.cache/
