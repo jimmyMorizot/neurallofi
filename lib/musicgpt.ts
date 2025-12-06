@@ -1,6 +1,5 @@
 import type { MusicStyle, TextureType, GenerationStatus } from '@/types';
 import { buildPrompt } from '@/types';
-import { getTask, setTask, updateTask } from './taskCache';
 
 // MusicGPT API Configuration - Real API endpoints
 const MUSICGPT_API_URL = process.env.MUSICGPT_API_URL || 'https://api.musicgpt.com';
@@ -29,19 +28,11 @@ export async function generateMusic(
   textures: TextureType[],
   withVocals: boolean = false,
   customLyrics?: string
-): Promise<{ taskId: string; eta: number }> {
+): Promise<{ taskId: string; eta: number; mockMode?: boolean; conversionId?: string }> {
   const prompt = buildPrompt(style, textures);
 
   // Generate a unique local task ID
   const taskId = generateTaskId();
-
-  // Store initial task status (file-based for serverless persistence)
-  await setTask(taskId, {
-    status: 'pending',
-    style,
-    progress: 'Initializing generation...',
-    createdAt: new Date().toISOString(),
-  });
 
   // Check if we should use mock mode
   const apiKey = MUSICGPT_API_KEY?.trim() || '';
@@ -49,14 +40,10 @@ export async function generateMusic(
 
   console.log('[MusicGPT] API Key status:', isValidApiKey ? 'Valid key detected' : 'No valid key - using MOCK mode');
 
-  // If no valid API key, use mock mode
+  // If no valid API key, use mock mode - client will handle simulation
   if (!isValidApiKey) {
-    console.log('[MusicGPT Mock] Starting generation with prompt:', prompt);
-
-    // Simulate async generation
-    simulateMockGeneration(taskId, style);
-
-    return { taskId, eta: 15 }; // Mock ETA
+    console.log('[MusicGPT Mock] Returning mock mode for client-side simulation');
+    return { taskId, eta: 10, mockMode: true };
   }
 
   try {
@@ -96,139 +83,83 @@ export async function generateMusic(
     console.log('[MusicGPT] Conversion IDs:', data.conversion_id_1, data.conversion_id_2);
     console.log('[MusicGPT] ETA:', data.eta, 'seconds');
 
-    // Update task with MusicGPT IDs
-    await updateTask(taskId, {
-      status: 'processing',
-      progress: 'Generation started...',
-      musicGptTaskId: data.task_id,
-      conversionId1: data.conversion_id_1,
-      conversionId2: data.conversion_id_2,
-    });
-
-    // No background polling - checkStatus will check MusicGPT directly
-
+    // Return conversion ID to client for stateless polling
     return {
       taskId,
       eta: data.eta || 120,
+      conversionId: data.conversion_id_1,
     };
   } catch (error) {
-    await updateTask(taskId, {
-      status: 'failed',
-      error: error instanceof Error ? error.message : 'Unknown error',
-    });
+    console.error('[MusicGPT] Generation error:', error);
     throw error;
   }
 }
 
 /**
  * Check the status of a generation task
- * Directly queries MusicGPT API if task is still processing
+ * Directly queries MusicGPT API - stateless, no cache needed
  */
-export async function checkStatus(taskId: string): Promise<{
+export async function checkStatus(conversionId: string): Promise<{
   status: GenerationStatus;
   progress?: string;
   files?: { url: string; version: number }[];
   error?: string;
 }> {
-  const task = await getTask(taskId);
-
-  if (!task) {
-    console.log('[MusicGPT] Task not found in cache:', taskId);
+  if (!conversionId) {
     return {
       status: 'failed',
-      error: 'Task not found',
+      error: 'No conversion ID provided',
     };
   }
 
-  // If task is already completed or failed, return cached status
-  if (task.status === 'completed' || task.status === 'failed') {
-    return {
-      status: task.status,
-      progress: task.progress,
-      files: task.files,
-      error: task.error,
-    };
-  }
+  try {
+    const result = await fetchConversionStatus(conversionId);
+    const conv = result?.conversion;
 
-  // If task is processing and we have conversion IDs, check MusicGPT directly
-  if (task.conversionId1) {
-    try {
-      const result = await fetchConversionStatus(task.conversionId1);
-      const conv = result?.conversion;
-
-      if (!conv) {
-        return {
-          status: 'processing',
-          progress: 'Checking generation status...',
-        };
-      }
-
-      const apiStatus = conv.status?.toUpperCase();
-      console.log('[MusicGPT] Direct status check:', apiStatus);
-
-      // Check if completed
-      if (apiStatus === 'COMPLETED' && conv.conversion_path_1 && conv.conversion_path_2) {
-        console.log('[MusicGPT] Generation complete! Downloading files...');
-
-        // Download and save files
-        const savedFiles = await downloadAndSaveFiles(
-          [
-            { url: conv.conversion_path_1 },
-            { url: conv.conversion_path_2 },
-          ],
-          taskId,
-          task.style
-        );
-
-        // Update cache
-        await updateTask(taskId, {
-          status: 'completed',
-          progress: 'Generation complete!',
-          files: savedFiles,
-        });
-
-        return {
-          status: 'completed',
-          progress: 'Generation complete!',
-          files: savedFiles,
-        };
-      }
-
-      // Check if failed
-      if (apiStatus === 'FAILED' || apiStatus === 'ERROR') {
-        await updateTask(taskId, {
-          status: 'failed',
-          error: conv.message || 'Generation failed',
-        });
-
-        return {
-          status: 'failed',
-          error: conv.message || 'Generation failed',
-        };
-      }
-
-      // Still processing - return status from API
+    if (!conv) {
       return {
         status: 'processing',
-        progress: `Generating music... (${apiStatus || 'IN_PROGRESS'})`,
-      };
-    } catch (error) {
-      console.error('[MusicGPT] Error checking status:', error);
-      // Return cached status on error
-      return {
-        status: task.status,
-        progress: task.progress,
+        progress: 'Checking generation status...',
       };
     }
-  }
 
-  // Return cached status (for mock mode or pending tasks)
-  return {
-    status: task.status,
-    progress: task.progress,
-    files: task.files,
-    error: task.error,
-  };
+    const apiStatus = conv.status?.toUpperCase();
+    console.log('[MusicGPT] Direct status check:', apiStatus);
+
+    // Check if completed
+    if (apiStatus === 'COMPLETED' && conv.conversion_path_1 && conv.conversion_path_2) {
+      console.log('[MusicGPT] Generation complete!');
+
+      return {
+        status: 'completed',
+        progress: 'Generation complete!',
+        files: [
+          { url: conv.conversion_path_1, version: 1 },
+          { url: conv.conversion_path_2, version: 2 },
+        ],
+      };
+    }
+
+    // Check if failed
+    if (apiStatus === 'FAILED' || apiStatus === 'ERROR') {
+      return {
+        status: 'failed',
+        error: conv.message || 'Generation failed',
+      };
+    }
+
+    // Still processing
+    return {
+      status: 'processing',
+      progress: `Generating music... (${apiStatus || 'IN_PROGRESS'})`,
+    };
+  } catch (error) {
+    console.error('[MusicGPT] Error checking status:', error);
+    return {
+      status: 'processing',
+      progress: 'Checking status...',
+    };
+  }
 }
 
 /**
@@ -277,87 +208,14 @@ async function fetchConversionStatus(conversionId: string): Promise<{
 }
 
 /**
- * Return files with direct URLs (no local download - Vercel has read-only filesystem)
- */
-async function downloadAndSaveFiles(
-  files: { url: string }[],
-  taskId: string,
-  style: MusicStyle
-): Promise<{ url: string; version: number }[]> {
-  // On Vercel, we can't save files locally (read-only filesystem)
-  // Return direct URLs instead
-  return files.map((file, i) => ({
-    url: file.url,
-    version: i + 1,
-  }));
-}
-
-// Sample MP3 URLs for mock mode (royalty-free Lo-Fi samples)
-const MOCK_SAMPLE_URLS = [
-  'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
-  'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3',
-];
-
-/**
- * Simulate mock generation for development
- * Downloads sample MP3 files and saves them with proper naming
- */
-async function simulateMockGeneration(taskId: string, style: MusicStyle): Promise<void> {
-  const steps = [
-    { delay: 1000, progress: 'Connecting to MusicGPT...' },
-    { delay: 1500, progress: 'Analyzing style parameters...' },
-    { delay: 2000, progress: 'Generating waveform...' },
-    { delay: 2000, progress: 'Applying textures...' },
-    { delay: 1500, progress: 'Mastering audio tracks...' },
-    { delay: 1000, progress: 'Finalizing...' },
-  ];
-
-  for (const step of steps) {
-    await new Promise((resolve) => setTimeout(resolve, step.delay));
-
-    const task = await getTask(taskId);
-    if (!task) return;
-
-    await updateTask(taskId, {
-      status: 'processing',
-      progress: step.progress,
-    });
-  }
-
-  // Download sample files and save them locally
-  try {
-    const savedFiles = await downloadAndSaveFiles(
-      MOCK_SAMPLE_URLS.map(url => ({ url })),
-      taskId,
-      style
-    );
-
-    if (savedFiles.length > 0) {
-      await updateTask(taskId, {
-        status: 'completed',
-        progress: 'Generation complete!',
-        files: savedFiles,
-      });
-    } else {
-      throw new Error('No files were saved');
-    }
-  } catch (error) {
-    console.error('[Mock] Error in mock generation:', error);
-    await updateTask(taskId, {
-      status: 'failed',
-      error: 'Mock generation failed - could not download sample files',
-    });
-  }
-}
-
-/**
  * Generate a unique task ID
  */
 function generateTaskId(): string {
   return Math.random().toString(36).substring(2, 10);
 }
 
-/**
- * Clean up old tasks from cache
- */
-export { cleanupOldTasks } from './taskCache';
+// Mock sample URLs for client-side simulation
+export const MOCK_SAMPLE_URLS = [
+  'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
+  'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3',
+];

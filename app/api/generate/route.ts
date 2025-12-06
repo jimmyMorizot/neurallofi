@@ -30,12 +30,13 @@ export async function POST(request: NextRequest) {
     // Generate music
     const result = await generateMusic(body.style, textures, withVocals, customLyrics);
 
-    const response: GenerationResponse = {
+    return NextResponse.json({
       taskId: result.taskId,
       eta: result.eta,
-    };
-
-    return NextResponse.json(response);
+      mockMode: result.mockMode || false,
+      conversionId: result.conversionId,
+      style: body.style,
+    });
   } catch (error) {
     console.error('Error generating music:', error);
     return NextResponse.json(

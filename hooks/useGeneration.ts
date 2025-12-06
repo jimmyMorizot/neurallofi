@@ -7,8 +7,15 @@ import type {
   GenerationStatus,
   ConsoleMessage,
   ConsoleMessageType,
+  MusicStyle,
 } from '@/types';
 import { generateId } from '@/lib/utils';
+
+// Mock sample URLs
+const MOCK_SAMPLE_URLS = [
+  'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
+  'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3',
+];
 
 interface UseGenerationOptions {
   onComplete?: () => void;
@@ -26,7 +33,7 @@ interface UseGenerationReturn {
 }
 
 export function useGeneration(options: UseGenerationOptions = {}): UseGenerationReturn {
-  const { onComplete, pollingInterval = 2000 } = options;
+  const { onComplete, pollingInterval = 3000 } = options;
 
   const [status, setStatus] = useState<GenerationStatus>('idle');
   const [progress, setProgress] = useState(0);
@@ -70,10 +77,24 @@ export function useGeneration(options: UseGenerationOptions = {}): UseGeneration
     }
   }, []);
 
+  const saveTracksToLocalStorage = useCallback((taskId: string, style: MusicStyle, files: { url: string; version: number }[]) => {
+    const existingTracks = JSON.parse(localStorage.getItem('neural-lofi-tracks') || '[]');
+    const newTracks = files.map((file) => ({
+      id: `${taskId}_v${file.version}`,
+      title: `${style.charAt(0).toUpperCase() + style.slice(1)} Lo-Fi #${taskId.slice(0, 4)}-${file.version}`,
+      style,
+      url: file.url,
+      createdAt: new Date().toISOString(),
+    }));
+    localStorage.setItem('neural-lofi-tracks', JSON.stringify([...newTracks, ...existingTracks]));
+    // Trigger storage event for other components
+    window.dispatchEvent(new Event('storage'));
+  }, []);
+
   const pollStatus = useCallback(
-    async (taskId: string) => {
+    async (taskId: string, conversionId: string, style: MusicStyle) => {
       try {
-        const response = await fetch(`/api/status/${taskId}`);
+        const response = await fetch(`/api/status/${taskId}?conversionId=${conversionId}`);
         const data = await response.json();
 
         if (data.status === 'completed') {
@@ -83,17 +104,8 @@ export function useGeneration(options: UseGenerationOptions = {}): UseGeneration
           setEta(0);
           addMessage('SEQUENCE COMPLETE', 'success');
 
-          // Store tracks in localStorage for persistence on Vercel
           if (data.files && data.files.length > 0) {
-            const existingTracks = JSON.parse(localStorage.getItem('neural-lofi-tracks') || '[]');
-            const newTracks = data.files.map((file: { url: string; version: number }, index: number) => ({
-              id: `${taskId}_v${file.version}`,
-              title: `Lo-Fi Track #${taskId.slice(0, 4)}-${file.version}`,
-              style: 'classic', // Default, could be passed from request
-              url: file.url,
-              createdAt: new Date().toISOString(),
-            }));
-            localStorage.setItem('neural-lofi-tracks', JSON.stringify([...newTracks, ...existingTracks]));
+            saveTracksToLocalStorage(taskId, style, data.files);
           }
 
           toast.success('Track generated!', {
@@ -137,7 +149,49 @@ export function useGeneration(options: UseGenerationOptions = {}): UseGeneration
         console.error('Polling error:', err);
       }
     },
-    [addMessage, onComplete, stopPolling]
+    [addMessage, onComplete, stopPolling, saveTracksToLocalStorage]
+  );
+
+  const runMockGeneration = useCallback(
+    async (taskId: string, style: MusicStyle) => {
+      const steps = [
+        { delay: 1000, progress: 'Connecting to MusicGPT...' },
+        { delay: 1500, progress: 'Analyzing style parameters...' },
+        { delay: 2000, progress: 'Generating waveform...' },
+        { delay: 2000, progress: 'Applying textures...' },
+        { delay: 1500, progress: 'Mastering audio tracks...' },
+        { delay: 1000, progress: 'Finalizing...' },
+      ];
+
+      let currentProgress = 0;
+      for (const step of steps) {
+        await new Promise((resolve) => setTimeout(resolve, step.delay));
+        currentProgress += 15;
+        setProgress(Math.min(currentProgress, 90));
+        addMessage(step.progress, 'process');
+      }
+
+      // Complete with mock files
+      setStatus('completed');
+      setProgress(100);
+      setEta(0);
+      addMessage('SEQUENCE COMPLETE', 'success');
+
+      const mockFiles = MOCK_SAMPLE_URLS.map((url, i) => ({
+        url,
+        version: i + 1,
+      }));
+      saveTracksToLocalStorage(taskId, style, mockFiles);
+
+      toast.success('Track generated!', {
+        description: 'Your Lo-Fi track is ready to play.',
+      });
+
+      if (onComplete) {
+        onComplete();
+      }
+    },
+    [addMessage, saveTracksToLocalStorage, onComplete]
   );
 
   const generate = useCallback(
@@ -172,10 +226,18 @@ export function useGeneration(options: UseGenerationOptions = {}): UseGeneration
         addMessage('Generation started', 'success');
         addMessage(`Estimated time: ${data.eta}s`, 'info');
 
-        // Start polling
-        pollingRef.current = setInterval(() => {
-          pollStatus(data.taskId);
-        }, pollingInterval);
+        // Check if mock mode (no API key configured)
+        if (data.mockMode) {
+          // Run mock generation client-side
+          await runMockGeneration(data.taskId, data.style || request.style);
+        } else if (data.conversionId) {
+          // Real mode: poll with conversionId
+          pollingRef.current = setInterval(() => {
+            pollStatus(data.taskId, data.conversionId, data.style || request.style);
+          }, pollingInterval);
+        } else {
+          throw new Error('Invalid response from server');
+        }
       } catch (err) {
         setStatus('failed');
         const errorMessage = err instanceof Error ? err.message : 'Unknown error';
@@ -186,7 +248,7 @@ export function useGeneration(options: UseGenerationOptions = {}): UseGeneration
         });
       }
     },
-    [addMessage, pollStatus, pollingInterval]
+    [addMessage, pollStatus, pollingInterval, runMockGeneration]
   );
 
   const reset = useCallback(() => {

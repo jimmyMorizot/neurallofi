@@ -16,7 +16,7 @@ type MobileView = 'library' | 'create';
 export default function Home() {
   const [mobileView, setMobileView] = useState<MobileView>('library');
   const [showFavoritesFilter, setShowFavoritesFilter] = useState(false);
-  const { tracks, isLoading, isImporting, refresh, deleteTrack, importTrack, exportLibrary } = useLibrary();
+  const { tracks, isLoading, refresh, deleteTrack } = useLibrary();
   const { favorites, isFavorite, toggleFavorite } = useFavorites();
   const {
     currentTrack,
@@ -79,9 +79,7 @@ export default function Home() {
           onDelete={deleteTrack}
           isFavorite={isFavorite}
           onToggleFavorite={toggleFavorite}
-          onImport={importTrack}
           isLoading={isLoading}
-          isImporting={isImporting}
           showFavoritesOnly={showFavoritesFilter}
         />
       </main>
@@ -100,9 +98,7 @@ export default function Home() {
               onDelete={deleteTrack}
               isFavorite={isFavorite}
               onToggleFavorite={toggleFavorite}
-              onImport={importTrack}
               isLoading={isLoading}
-              isImporting={isImporting}
               showFavoritesOnly={showFavoritesFilter}
             />
           </>

@@ -7,16 +7,17 @@ export async function GET(
   { params }: { params: Promise<{ taskId: string }> }
 ) {
   try {
-    const { taskId } = await params;
+    // Get conversionId from query params (for real MusicGPT mode)
+    const conversionId = request.nextUrl.searchParams.get('conversionId');
 
-    if (!taskId) {
+    if (!conversionId) {
       return NextResponse.json(
-        { error: 'Task ID is required' },
+        { error: 'Conversion ID is required' },
         { status: 400 }
       );
     }
 
-    const status = await checkStatus(taskId);
+    const status = await checkStatus(conversionId);
 
     const response: StatusResponse = {
       status: status.status,

@@ -1,7 +1,6 @@
 'use client';
 
-import { useRef } from 'react';
-import { Music, Upload } from 'lucide-react';
+import { Music } from 'lucide-react';
 import { TrackCard } from './TrackCard';
 import type { Track, MusicStyle } from '@/types';
 import { STYLE_CONFIG } from '@/types';
@@ -16,9 +15,7 @@ interface LibraryProps {
   onDelete: (track: Track) => void;
   isFavorite: (trackId: string) => boolean;
   onToggleFavorite: (trackId: string) => void;
-  onImport: (file: File) => Promise<boolean>;
   isLoading?: boolean;
-  isImporting?: boolean;
   showFavoritesOnly?: boolean;
 }
 
@@ -41,20 +38,9 @@ export function Library({
   onDelete,
   isFavorite,
   onToggleFavorite,
-  onImport,
   isLoading,
-  isImporting,
   showFavoritesOnly = false,
 }: LibraryProps) {
-  const fileInputRef = useRef<HTMLInputElement>(null);
-
-  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      await onImport(file);
-      if (fileInputRef.current) fileInputRef.current.value = '';
-    }
-  };
 
   // Filter by favorites if needed
   const displayTracks = showFavoritesOnly
@@ -86,11 +72,6 @@ export function Library({
         <div className="empty-state-icon"><Music className="h-12 w-12" /></div>
         <p>No tracks yet</p>
         <p className="text-sm mt-1">Generate your first Lo-Fi track!</p>
-        <button onClick={() => fileInputRef.current?.click()} disabled={isImporting} className="import-btn mt-6">
-          <Upload className={cn('h-4 w-4', isImporting && 'animate-pulse')} />
-          {isImporting ? 'Importing...' : 'Import MP3'}
-        </button>
-        <input ref={fileInputRef} type="file" accept="audio/mpeg,audio/mp3,.mp3" onChange={handleFileSelect} className="hidden" />
       </div>
     );
   }
@@ -107,14 +88,8 @@ export function Library({
 
   return (
     <div className="library-container">
-      <input ref={fileInputRef} type="file" accept="audio/mpeg,audio/mp3,.mp3" onChange={handleFileSelect} className="hidden" />
-
       <div className="library-header">
         <span className="text-sm text-muted">{displayTracks.length} track{displayTracks.length !== 1 ? 's' : ''}</span>
-        <button onClick={() => fileInputRef.current?.click()} disabled={isImporting} className="import-btn">
-          <Upload className={cn('h-4 w-4', isImporting && 'animate-pulse')} />
-          {isImporting ? 'Importing...' : 'Import MP3'}
-        </button>
       </div>
 
       <div className="library-sections">
