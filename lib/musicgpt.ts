@@ -310,15 +310,16 @@ async function downloadAndSaveFiles(
 
 /**
  * Simulate mock generation for development
+ * Uses sample MP3 files and copies them with proper naming
  */
 async function simulateMockGeneration(taskId: string, style: MusicStyle): Promise<void> {
   const steps = [
-    { delay: 2000, progress: 'Connecting to MusicGPT...' },
-    { delay: 3000, progress: 'Analyzing style parameters...' },
-    { delay: 4000, progress: 'Generating waveform...' },
-    { delay: 5000, progress: 'Applying textures...' },
-    { delay: 3000, progress: 'Mastering audio tracks...' },
-    { delay: 2000, progress: 'Finalizing...' },
+    { delay: 1000, progress: 'Connecting to MusicGPT...' },
+    { delay: 1500, progress: 'Analyzing style parameters...' },
+    { delay: 2000, progress: 'Generating waveform...' },
+    { delay: 2000, progress: 'Applying textures...' },
+    { delay: 1500, progress: 'Mastering audio tracks...' },
+    { delay: 1000, progress: 'Finalizing...' },
   ];
 
   for (const step of steps) {
@@ -334,16 +335,62 @@ async function simulateMockGeneration(taskId: string, style: MusicStyle): Promis
     });
   }
 
-  // Complete with mock files
-  taskStore.set(taskId, {
-    ...taskStore.get(taskId)!,
-    status: 'completed',
-    progress: 'Generation complete!',
-    files: [
-      { url: `/generated/music/${taskId}_${style}_v1.mp3`, version: 1 },
-      { url: `/generated/music/${taskId}_${style}_v2.mp3`, version: 2 },
-    ],
-  });
+  // Copy sample files to create "generated" tracks
+  try {
+    const { promises: fs } = await import('fs');
+    const path = await import('path');
+    const musicDir = path.join(process.cwd(), 'public/generated/music');
+
+    // Sample files to copy
+    const sampleFiles = [
+      { src: 'sample_classic_v1.mp3', dest: `${taskId}_${style}_v1.mp3` },
+      { src: 'sample_classic_v2.mp3', dest: `${taskId}_${style}_v2.mp3` },
+    ];
+
+    const savedFiles: { url: string; version: number }[] = [];
+
+    for (let i = 0; i < sampleFiles.length; i++) {
+      const srcPath = path.join(musicDir, sampleFiles[i].src);
+      const destPath = path.join(musicDir, sampleFiles[i].dest);
+
+      try {
+        await fs.copyFile(srcPath, destPath);
+        savedFiles.push({
+          url: `/generated/music/${sampleFiles[i].dest}`,
+          version: i + 1,
+        });
+      } catch (copyError) {
+        console.error(`[Mock] Failed to copy sample file:`, copyError);
+      }
+    }
+
+    if (savedFiles.length > 0) {
+      taskStore.set(taskId, {
+        ...taskStore.get(taskId)!,
+        status: 'completed',
+        progress: 'Generation complete!',
+        files: savedFiles,
+      });
+    } else {
+      // Fallback: use sample files directly if copy failed
+      taskStore.set(taskId, {
+        ...taskStore.get(taskId)!,
+        status: 'completed',
+        progress: 'Generation complete!',
+        files: [
+          { url: `/generated/music/sample_classic_v1.mp3`, version: 1 },
+          { url: `/generated/music/sample_classic_v2.mp3`, version: 2 },
+        ],
+      });
+    }
+  } catch (error) {
+    console.error('[Mock] Error in mock generation:', error);
+    taskStore.set(taskId, {
+      ...taskStore.get(taskId)!,
+      status: 'failed',
+      error: 'Mock generation failed - sample files not found',
+    });
+  }
 }
 
 /**

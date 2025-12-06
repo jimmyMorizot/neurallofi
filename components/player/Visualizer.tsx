@@ -10,27 +10,34 @@ interface VisualizerProps {
 
 // Hauteurs fixes pour éviter l'erreur d'hydratation
 const INITIAL_HEIGHTS = [40, 60, 80, 50, 70];
-const ANIMATION_INTERVAL = 50; // ms - plus réactif avec Web Audio API
+const TARGET_FPS = 30; // Throttle à 30fps pour économiser CPU
+const FRAME_INTERVAL = 1000 / TARGET_FPS;
 
 export function Visualizer({ isPlaying, getFrequencyData }: VisualizerProps) {
   const [heights, setHeights] = useState(INITIAL_HEIGHTS);
   const rafRef = useRef<number>(0);
+  const lastFrameTimeRef = useRef<number>(0);
 
-  // Animation avec requestAnimationFrame et Web Audio API
+  // Animation avec requestAnimationFrame throttlé à 30fps
   useEffect(() => {
     if (!isPlaying) {
       setHeights(INITIAL_HEIGHTS);
       return;
     }
 
-    const animate = () => {
-      if (getFrequencyData) {
-        // Utiliser les vraies données de fréquence
-        const frequencyData = getFrequencyData();
-        setHeights(frequencyData);
-      } else {
-        // Fallback avec animation aléatoire
-        setHeights(INITIAL_HEIGHTS.map(() => 20 + Math.random() * 80));
+    const animate = (timestamp: number) => {
+      // Throttle: ne mettre à jour que si assez de temps s'est écoulé
+      if (timestamp - lastFrameTimeRef.current >= FRAME_INTERVAL) {
+        lastFrameTimeRef.current = timestamp;
+
+        if (getFrequencyData) {
+          // Utiliser les vraies données de fréquence
+          const frequencyData = getFrequencyData();
+          setHeights(frequencyData);
+        } else {
+          // Fallback avec animation aléatoire
+          setHeights(INITIAL_HEIGHTS.map(() => 20 + Math.random() * 80));
+        }
       }
       rafRef.current = requestAnimationFrame(animate);
     };
