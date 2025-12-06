@@ -39,13 +39,14 @@ export function useLibrary(): UseLibraryReturn {
         // Convert to Track format
         const converted: Track[] = storedTracks.map((t) => ({
           id: t.id,
+          taskId: t.id.split('_')[0],
           title: t.title,
           style: t.style,
           version: 1,
           filename: t.id + '.mp3',
           url: t.url,
           date: new Date(t.createdAt),
-          size: 0,
+          size: '0 KB',
         }));
         setTracks(converted);
       }
