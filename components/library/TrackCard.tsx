@@ -69,7 +69,7 @@ export function TrackCard({
         <button
           onClick={onToggleFavorite}
           className={cn(
-            'flex-shrink-0 transition-colors',
+            'shrink-0 transition-colors',
             isFavorite ? 'text-pink' : 'text-muted hover:text-pink'
           )}
           title={isFavorite ? 'Remove from favorites' : 'Add to favorites'}
