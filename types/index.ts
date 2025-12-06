@@ -13,6 +13,8 @@ export type GenerationStatus = 'idle' | 'pending' | 'processing' | 'completed' |
 export interface GenerationRequest {
   style: MusicStyle;
   textures: TextureType[];
+  withVocals?: boolean;
+  customLyrics?: string; // Custom lyrics for vocal generation
 }
 
 export interface GenerationResponse {
@@ -79,61 +81,61 @@ export interface TextureConfig {
   addition: string;
 }
 
-// Style Configuration
+// Style Configuration - Prompts optimized for MusicGPT (max 300 chars total)
 export const STYLE_CONFIG: Record<MusicStyle, StyleConfig> = {
   classic: {
     label: 'Classic Lo-Fi',
     icon: '🎹',
     color: 'cyan',
-    prompt: 'Chill LoFi hip-hop beat with mellow groove and nostalgic atmosphere',
+    prompt: 'Lo-fi hip-hop, 75 BPM, dusty vinyl drums, Rhodes piano, jazzy chords, muted bass, tape saturation, Nujabes style',
   },
   indian: {
     label: 'Indian Lo-Fi',
     icon: '🪷',
     color: 'orange',
-    prompt: 'Indian lofi with spiritual melodies, sitar textures, and meditative oriental vibes',
+    prompt: 'Indian lo-fi, 70 BPM, sitar melody, tabla drums, tanpura drone, raga-inspired, meditative spiritual atmosphere',
   },
   african: {
     label: 'African Lo-Fi',
     icon: '🥁',
     color: 'yellow',
-    prompt: 'Afrobeats lofi with rhythmic grooves, organic textures, and warm percussion',
+    prompt: 'Afrobeats lo-fi, 95 BPM, djembe drums, kalimba melody, kora textures, polyrhythmic, warm African grooves',
   },
   asian: {
     label: 'Asian Lo-Fi',
     icon: '🎋',
     color: 'green',
-    prompt: 'Asian lofi with zen atmosphere, peaceful oriental melodies, and traditional instruments',
+    prompt: 'Japanese lo-fi, 65 BPM, koto plucks, shakuhachi flute, pentatonic melody, zen atmosphere, Studio Ghibli vibes',
   },
   latino: {
     label: 'Latino Lo-Fi',
     icon: '🌴',
     color: 'pink',
-    prompt: 'Bossa nova lofi with tropical rhythms, warm guitar, and sunset vibes',
+    prompt: 'Bossa nova lo-fi, 85 BPM, nylon guitar, brushed drums, Brazilian percussion, sunset beach vibes, romantic',
   },
 };
 
-// Texture Configuration
+// Texture Configuration - Short additions for MusicGPT prompt limit
 export const TEXTURE_CONFIG: Record<TextureType, TextureConfig> = {
   rain: {
     label: 'Rain',
     icon: '🌧️',
-    addition: 'ambient rain sounds',
+    addition: 'rain ambience, cozy atmosphere',
   },
   vinyl: {
     label: 'Vinyl',
     icon: '📀',
-    addition: 'warm vinyl crackle and tape saturation',
+    addition: 'vinyl crackle, tape warmth',
   },
   city: {
     label: 'City',
     icon: '🌃',
-    addition: 'distant urban ambiance',
+    addition: 'city night ambience, urban vibes',
   },
   typing: {
     label: 'Typing',
     icon: '⌨️',
-    addition: 'soft keyboard typing sounds',
+    addition: 'keyboard typing sounds, study room',
   },
 };
 
@@ -151,14 +153,17 @@ export function getStyleLabel(style: MusicStyle): string {
   return STYLE_CONFIG[style].label;
 }
 
-// Helper function to build prompt
+// Helper function to build prompt (max 300 chars for MusicGPT API)
 export function buildPrompt(style: MusicStyle, textures: TextureType[]): string {
   const basePrompt = STYLE_CONFIG[style].prompt;
   const textureAdditions = textures.map((t) => TEXTURE_CONFIG[t].addition);
 
   const textureString = textureAdditions.length > 0
-    ? ` with ${textureAdditions.join(', ')}`
+    ? `, ${textureAdditions.join(', ')}`
     : '';
 
-  return `${basePrompt}${textureString}. Lofi, Chillhop, Calm, Vibe, Study Beats. Perfect for focus, studying, or relaxation.`;
+  const fullPrompt = `${basePrompt}${textureString}. Chill study beats.`;
+
+  // Ensure max 300 characters (MusicGPT limit)
+  return fullPrompt.slice(0, 300);
 }

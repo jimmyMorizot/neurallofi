@@ -81,14 +81,39 @@ type GenerationStatus = 'pending' | 'processing' | 'completed' | 'failed';
 - Font : JetBrains Mono
 - Effets : Glassmorphism, Glow, Scanlines
 
-## Workflow recommandé
+## Workflow Git (OBLIGATOIRE)
+
+**AVANT toute modification de code :**
+
+1. Vérifier la branche courante : `git branch --show-current`
+2. Si sur `develop` ou `main` → **CRÉER UNE BRANCHE** avant de coder
+3. Convention de nommage : `{type}/{description}`
+   - `feat/nom-feature` - Nouvelle fonctionnalité
+   - `fix/nom-bug` - Correction de bug
+   - `refactor/description` - Refactorisation
+   - `docs/description` - Documentation
+
+```bash
+# Exemple workflow
+git checkout develop
+git pull origin develop
+git checkout -b feat/nouvelle-feature
+# ... coder ...
+git add . && git commit -m "feat(scope): description"
+git push -u origin feat/nouvelle-feature
+# Créer PR vers develop
+```
+
+## Workflow AIDD recommandé
 
 1. `/discover` - Comprendre le projet
 2. `/plan` - Planifier l'implémentation
-3. `/task` - Créer les tâches
-4. `/execute` - Implémenter en TDD
-5. `/review` - Vérifier la qualité
-6. `/commit` - Sauvegarder
+3. **Créer une branche** depuis develop
+4. `/task` - Créer les tâches
+5. `/execute` - Implémenter en TDD
+6. `/review` - Vérifier la qualité
+7. `/commit` - Sauvegarder
+8. Push + PR vers develop
 
 ## Notes importantes
 
