@@ -36,7 +36,7 @@ export function useAudioPlayer(): UseAudioPlayerReturn {
   const analyserRef = useRef<AnalyserNode | null>(null);
   const primarySourceRef = useRef<MediaElementAudioSourceNode | null>(null);
   const secondarySourceRef = useRef<MediaElementAudioSourceNode | null>(null);
-  const dataArrayRef = useRef<Uint8Array | null>(null);
+  const dataArrayRef = useRef<Uint8Array<ArrayBuffer> | null>(null);
 
   const [currentTrack, setCurrentTrack] = useState<Track | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);

@@ -2,7 +2,7 @@ import type { MusicStyle, TextureType, GenerationStatus } from '@/types';
 import { buildPrompt } from '@/types';
 import { saveFile } from './filesystem';
 
-// MusicGPT API Configuration
+// MusicGPT API Configuration - Real API endpoints
 const MUSICGPT_API_URL = process.env.MUSICGPT_API_URL || 'https://api.musicgpt.com';
 const MUSICGPT_API_KEY = process.env.MUSICGPT_API_KEY || '';
 
@@ -14,10 +14,28 @@ const taskStore = new Map<string, {
   files?: { url: string; version: number }[];
   error?: string;
   createdAt: Date;
+  musicGptTaskId?: string;
+  conversionId1?: string;
+  conversionId2?: string;
 }>();
 
 /**
+ * Get the music style label for the API
+ */
+function getStyleLabel(style: MusicStyle): string {
+  const labels: Record<MusicStyle, string> = {
+    classic: 'Lo-fi Hip Hop',
+    indian: 'Indian Lo-fi',
+    african: 'Afrobeats Lo-fi',
+    asian: 'Asian Lo-fi',
+    latino: 'Bossa Nova Lo-fi',
+  };
+  return labels[style];
+}
+
+/**
  * Generate music using MusicGPT API
+ * API Docs: https://docs.musicgpt.com/api-documentation/conversions/musicai
  */
 export async function generateMusic(
   style: MusicStyle,
@@ -25,7 +43,7 @@ export async function generateMusic(
 ): Promise<{ taskId: string; eta: number }> {
   const prompt = buildPrompt(style, textures);
 
-  // Generate a unique task ID
+  // Generate a unique local task ID
   const taskId = generateTaskId();
 
   // Store initial task status
@@ -37,7 +55,7 @@ export async function generateMusic(
   });
 
   // If no API key, use mock mode
-  if (!MUSICGPT_API_KEY) {
+  if (!MUSICGPT_API_KEY || MUSICGPT_API_KEY === 'your_api_key_here') {
     console.log('[MusicGPT Mock] Starting generation with prompt:', prompt);
 
     // Simulate async generation
@@ -47,16 +65,22 @@ export async function generateMusic(
   }
 
   try {
-    const response = await fetch(`${MUSICGPT_API_URL}/v1/generate`, {
+    // Real MusicGPT API call
+    // Endpoint: POST /api/public/v1/MusicAI
+    const response = await fetch(`${MUSICGPT_API_URL}/api/public/v1/MusicAI`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${MUSICGPT_API_KEY}`,
+        'Authorization': MUSICGPT_API_KEY, // No Bearer prefix per docs
       },
       body: JSON.stringify({
-        prompt,
-        musicStyle: getStyleLabel(style),
-        makeInstrumental: true,
+        prompt: prompt,
+        music_style: getStyleLabel(style),
+        make_instrumental: true,
+        // lyrics: '', // Empty for instrumental
+        // vocal_only: false,
+        // voice_id: '',
+        // webhook_url: '', // We'll poll instead
       }),
     });
 
@@ -67,15 +91,23 @@ export async function generateMusic(
 
     const data = await response.json();
 
-    // Update task with MusicGPT task ID
+    // Response format: { success, message, task_id, conversion_id_1, conversion_id_2, eta }
+    if (!data.success) {
+      throw new Error(data.message || 'MusicGPT API returned unsuccessful response');
+    }
+
+    // Update task with MusicGPT IDs
     taskStore.set(taskId, {
       ...taskStore.get(taskId)!,
       status: 'processing',
       progress: 'Generation started...',
+      musicGptTaskId: data.task_id,
+      conversionId1: data.conversion_id_1,
+      conversionId2: data.conversion_id_2,
     });
 
-    // Start polling for status
-    pollMusicGPTStatus(taskId, data.taskId, style);
+    // Start polling for status using conversion IDs
+    pollMusicGPTStatus(taskId, data.conversion_id_1, data.conversion_id_2, style);
 
     return {
       taskId,
@@ -118,11 +150,13 @@ export async function checkStatus(taskId: string): Promise<{
 }
 
 /**
- * Poll MusicGPT API for task status
+ * Poll MusicGPT API for conversion status
+ * Uses: GET /api/public/v1/conversion/{conversionId}
  */
 async function pollMusicGPTStatus(
   localTaskId: string,
-  musicGptTaskId: string,
+  conversionId1: string,
+  conversionId2: string,
   style: MusicStyle
 ): Promise<void> {
   const maxAttempts = 60; // 5 minutes with 5s interval
@@ -132,58 +166,117 @@ async function pollMusicGPTStatus(
     attempts++;
 
     try {
-      const response = await fetch(`${MUSICGPT_API_URL}/v1/status/${musicGptTaskId}`, {
-        headers: {
-          'Authorization': `Bearer ${MUSICGPT_API_KEY}`,
-        },
-      });
+      // Check both conversions
+      const [result1, result2] = await Promise.all([
+        fetchConversionStatus(conversionId1),
+        fetchConversionStatus(conversionId2),
+      ]);
 
-      if (!response.ok) {
-        throw new Error(`Status check failed: ${response.status}`);
-      }
+      const task = taskStore.get(localTaskId);
+      if (!task) return;
 
-      const data = await response.json();
+      // Check conversion status (completed, processing, failed, etc.)
+      const conv1 = result1?.conversion;
+      const conv2 = result2?.conversion;
 
-      if (data.status === 'completed' && data.files) {
+      // Check if both are completed with audio URLs
+      const file1Ready = conv1?.status === 'completed' && conv1?.audio_url;
+      const file2Ready = conv2?.status === 'completed' && conv2?.audio_url;
+
+      if (file1Ready && file2Ready && conv1?.audio_url && conv2?.audio_url) {
         // Download and save files
-        const savedFiles = await downloadAndSaveFiles(data.files, localTaskId, style);
+        const savedFiles = await downloadAndSaveFiles(
+          [
+            { url: conv1.audio_url },
+            { url: conv2.audio_url },
+          ],
+          localTaskId,
+          style
+        );
 
         taskStore.set(localTaskId, {
-          ...taskStore.get(localTaskId)!,
+          ...task,
           status: 'completed',
           progress: 'Generation complete!',
           files: savedFiles,
         });
-      } else if (data.status === 'failed') {
+      } else if (conv1?.status === 'failed' || conv2?.status === 'failed') {
+        // Generation failed
         taskStore.set(localTaskId, {
-          ...taskStore.get(localTaskId)!,
+          ...task,
           status: 'failed',
-          error: data.error || 'Generation failed',
+          error: conv1?.status_msg || conv2?.status_msg || 'Generation failed',
         });
       } else if (attempts < maxAttempts) {
+        // Still processing
+        const progressPercent = Math.min(Math.round((attempts / maxAttempts) * 100), 95);
+        const statusMsg = conv1?.status_msg || conv2?.status_msg || `Generating music... (${progressPercent}%)`;
         taskStore.set(localTaskId, {
-          ...taskStore.get(localTaskId)!,
+          ...task,
           status: 'processing',
-          progress: data.progress || `Processing... (${Math.round((attempts / maxAttempts) * 100)}%)`,
+          progress: statusMsg,
         });
         setTimeout(poll, 5000);
       } else {
         taskStore.set(localTaskId, {
-          ...taskStore.get(localTaskId)!,
+          ...task,
           status: 'failed',
           error: 'Generation timed out',
         });
       }
     } catch (error) {
-      taskStore.set(localTaskId, {
-        ...taskStore.get(localTaskId)!,
-        status: 'failed',
-        error: error instanceof Error ? error.message : 'Unknown error',
-      });
+      const task = taskStore.get(localTaskId);
+      if (task && attempts < maxAttempts) {
+        // Retry on error
+        setTimeout(poll, 5000);
+      } else if (task) {
+        taskStore.set(localTaskId, {
+          ...task,
+          status: 'failed',
+          error: error instanceof Error ? error.message : 'Unknown error',
+        });
+      }
     }
   };
 
-  setTimeout(poll, 5000);
+  // Start polling after initial delay
+  setTimeout(poll, 10000); // Wait 10s before first poll
+}
+
+/**
+ * Fetch conversion status from MusicGPT
+ * Endpoint: GET /api/public/v1/byId?conversionType=MUSIC_AI&conversion_id={id}
+ * Docs: https://docs.musicgpt.com/api-documentation/endpoint/getById
+ */
+async function fetchConversionStatus(conversionId: string): Promise<{
+  success: boolean;
+  conversion?: {
+    status: string;
+    status_msg?: string;
+    audio_url?: string;
+    title?: string;
+    lyrics?: string;
+  };
+} | null> {
+  try {
+    const url = new URL(`${MUSICGPT_API_URL}/api/public/v1/byId`);
+    url.searchParams.set('conversionType', 'MUSIC_AI');
+    url.searchParams.set('conversion_id', conversionId);
+
+    const response = await fetch(url.toString(), {
+      headers: {
+        'Authorization': MUSICGPT_API_KEY,
+      },
+    });
+
+    if (!response.ok) {
+      return null;
+    }
+
+    return response.json();
+  } catch {
+    return null;
+  }
 }
 
 /**
@@ -258,20 +351,6 @@ async function simulateMockGeneration(taskId: string, style: MusicStyle): Promis
  */
 function generateTaskId(): string {
   return Math.random().toString(36).substring(2, 10);
-}
-
-/**
- * Get the display label for a style
- */
-function getStyleLabel(style: MusicStyle): string {
-  const labels: Record<MusicStyle, string> = {
-    classic: 'Classic Lo-fi',
-    indian: 'Indian Lo-fi',
-    african: 'African Lo-fi',
-    asian: 'Asian Lo-fi',
-    latino: 'Latino Lo-fi',
-  };
-  return labels[style];
 }
 
 /**
