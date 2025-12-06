@@ -1,0 +1,51 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#050511"/>
+      <stop offset="100%" style="stop-color:#0b0c24"/>
+    </linearGradient>
+    <linearGradient id="neonGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#6fe7f3"/>
+      <stop offset="100%" style="stop-color:#f72585"/>
+    </linearGradient>
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="8" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="512" height="512" rx="96" fill="url(#bgGradient)"/>
+
+  <!-- Outer glow ring -->
+  <circle cx="256" cy="256" r="200" fill="none" stroke="url(#neonGradient)" stroke-width="2" opacity="0.3"/>
+
+  <!-- Sound wave bars -->
+  <g filter="url(#glow)" opacity="0.6">
+    <rect x="120" y="220" width="16" height="72" rx="8" fill="#6fe7f3"/>
+    <rect x="152" y="180" width="16" height="152" rx="8" fill="#3a86ff"/>
+    <rect x="184" y="140" width="16" height="232" rx="8" fill="#6fe7f3"/>
+  </g>
+
+  <!-- Main "N" letter -->
+  <g filter="url(#glow)">
+    <path
+      d="M220 340V172L340 340V172"
+      stroke="url(#neonGradient)"
+      stroke-width="32"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      fill="none"
+    />
+  </g>
+
+  <!-- Sound wave bars right -->
+  <g filter="url(#glow)" opacity="0.6">
+    <rect x="376" y="220" width="16" height="72" rx="8" fill="#f72585"/>
+    <rect x="344" y="180" width="16" height="152" rx="8" fill="#560bad"/>
+    <rect x="312" y="200" width="16" height="112" rx="8" fill="#f72585"/>
+  </g>
+</svg>

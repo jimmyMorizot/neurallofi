@@ -11,11 +11,21 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'Neural_Lofi - AI Lo-Fi Music Generator',
+  title: 'Neural Lofi - AI Lo-Fi Music Generator',
   description:
     'Generate unique Lo-Fi music tracks powered by AI. Choose from Classic, Indian, African, Asian, and Latino styles with customizable textures.',
   keywords: ['lofi', 'music', 'ai', 'generator', 'chill', 'study', 'beats'],
-  authors: [{ name: 'Neural_Lofi' }],
+  authors: [{ name: 'Neural Lofi' }],
+  manifest: '/manifest.json',
+  icons: {
+    icon: '/favicon.svg',
+    apple: '/icons/icon.svg',
+  },
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'black-translucent',
+    title: 'Neural Lofi',
+  },
 };
 
 export const viewport: Viewport = {

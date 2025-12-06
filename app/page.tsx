@@ -6,6 +6,7 @@ import { GeneratorPanel } from '@/components/generator/GeneratorPanel';
 import { Library } from '@/components/library/Library';
 import { PlayerBar } from '@/components/player/PlayerBar';
 import { FavoritesSection } from '@/components/sidebar/FavoritesSection';
+import { InstallPrompt } from '@/components/pwa/InstallPrompt';
 import { useLibrary } from '@/hooks/useLibrary';
 import { useAudioPlayer } from '@/hooks/useAudioPlayer';
 import { useFavorites } from '@/hooks/useFavorites';
@@ -52,12 +53,12 @@ export default function Home() {
 
       {/* MOBILE HEADER - Logo only, no hamburger menu */}
       <header className="mobile-header lg:hidden">
-        <div className="logo">NEURAL_LOFI</div>
+        <div className="logo">Neural Lofi</div>
       </header>
 
       {/* 2. SIDEBAR (visible uniquement desktop via CSS) */}
       <aside className="sidebar">
-        <div className="logo">NEURAL_LOFI</div>
+        <div className="logo">Neural Lofi</div>
         <FavoritesSection
           count={favorites.size}
           isActive={showFavoritesFilter}
@@ -68,7 +69,7 @@ export default function Home() {
 
       {/* 3. MAIN CONTENT - Desktop always shows library */}
       <main className="main-content hidden lg:block">
-        <h2 className="library-title">// LIBRARY_DATABASE</h2>
+        <h2 className="library-title">Library</h2>
         <Library
           tracks={tracks}
           currentTrackId={currentTrack?.id || null}
@@ -89,7 +90,7 @@ export default function Home() {
       <main className="mobile-content lg:hidden">
         {mobileView === 'library' ? (
           <>
-            <h2 className="library-title">// LIBRARY_DATABASE</h2>
+            <h2 className="library-title">Library</h2>
             <Library
               tracks={tracks}
               currentTrackId={currentTrack?.id || null}
@@ -107,7 +108,7 @@ export default function Home() {
           </>
         ) : (
           <div className="mobile-generator">
-            <h2 className="library-title">// CREATE_TRACK</h2>
+            <h2 className="library-title">Create</h2>
             <GeneratorPanel onGenerationComplete={handleGenerationComplete} />
           </div>
         )}
@@ -145,6 +146,9 @@ export default function Home() {
         onVolumeChange={setVolume}
         getFrequencyData={getFrequencyData}
       />
+
+      {/* PWA Install Prompt */}
+      <InstallPrompt />
     </>
   );
 }

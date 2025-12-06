@@ -1204,3 +1204,205 @@ body {
   white-space: normal;
   line-height: 1.4;
 }
+
+/* =========================================
+   PWA INSTALL PROMPT - CYBERPUNK STYLE
+   ========================================= */
+.pwa-prompt {
+  position: fixed;
+  bottom: calc(var(--player-height) + 20px);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 200;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.5rem 2rem;
+
+  background: linear-gradient(135deg, rgba(11, 12, 36, 0.95) 0%, rgba(5, 5, 17, 0.98) 100%);
+  border: 1px solid rgba(111, 231, 243, 0.3);
+  border-radius: 16px;
+  backdrop-filter: blur(20px);
+  box-shadow:
+    0 0 40px rgba(111, 231, 243, 0.15),
+    0 0 80px rgba(247, 37, 133, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+
+  animation: pwa-slide-up 0.4s ease-out;
+  max-width: calc(100vw - 2rem);
+}
+
+/* Top accent line */
+.pwa-prompt::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 20%;
+  right: 20%;
+  height: 2px;
+  background: linear-gradient(90deg,
+    transparent 0%,
+    var(--cyan-ice) 30%,
+    var(--pink-neon) 70%,
+    transparent 100%
+  );
+  border-radius: 16px 16px 0 0;
+}
+
+@keyframes pwa-slide-up {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+.pwa-prompt-close {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  background: none;
+  border: none;
+  color: #64748b;
+  cursor: pointer;
+  padding: 0.25rem;
+  transition: all 0.2s ease;
+}
+
+.pwa-prompt-close:hover {
+  color: var(--pink-neon);
+  filter: drop-shadow(0 0 4px var(--pink-neon));
+}
+
+.pwa-prompt-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.75rem;
+  background: rgba(111, 231, 243, 0.1);
+  border-radius: 12px;
+  border: 1px solid rgba(111, 231, 243, 0.2);
+}
+
+.pwa-prompt-content {
+  text-align: center;
+}
+
+.pwa-prompt-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #e0e7ff;
+  margin-bottom: 0.25rem;
+  letter-spacing: 0.5px;
+}
+
+.pwa-prompt-description {
+  font-size: 0.75rem;
+  color: #94a3b8;
+  max-width: 280px;
+}
+
+.pwa-prompt-actions {
+  display: flex;
+  gap: 0.75rem;
+  width: 100%;
+}
+
+.pwa-prompt-install {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.25rem;
+  background: rgba(111, 231, 243, 0.15);
+  border: 1px solid var(--cyan-ice);
+  color: var(--cyan-ice);
+  border-radius: 8px;
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.pwa-prompt-install:hover {
+  background: rgba(111, 231, 243, 0.25);
+  box-shadow: 0 0 20px rgba(111, 231, 243, 0.4);
+}
+
+.pwa-prompt-later {
+  padding: 0.75rem 1rem;
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #94a3b8;
+  border-radius: 8px;
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.pwa-prompt-later:hover {
+  border-color: rgba(255, 255, 255, 0.3);
+  color: #e0e7ff;
+}
+
+.pwa-prompt-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.7rem;
+  color: #64748b;
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.pwa-prompt-checkbox:hover {
+  color: #94a3b8;
+}
+
+.pwa-prompt-checkbox input[type="checkbox"] {
+  width: 14px;
+  height: 14px;
+  accent-color: var(--pink-neon);
+  cursor: pointer;
+}
+
+/* Mobile adjustments */
+@media (max-width: 640px) {
+  .pwa-prompt {
+    bottom: calc(var(--player-height) + 70px); /* Above mobile nav */
+    left: 1rem;
+    right: 1rem;
+    transform: none;
+    padding: 1.25rem;
+  }
+
+  @keyframes pwa-slide-up {
+    from {
+      opacity: 0;
+      transform: translateY(30px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .pwa-prompt-actions {
+    flex-direction: column;
+  }
+
+  .pwa-prompt-install,
+  .pwa-prompt-later {
+    width: 100%;
+  }
+}

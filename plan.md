@@ -1,136 +1,178 @@
-# Plan - Corrections UI/UX Library
+# Plan - Rebranding & PWA Neural Lofi
 
 ## Objectif
 
-Corriger les problèmes UI/UX identifiés sur les screenshots :
-
-1. **Modal de suppression** → Ne s'affiche pas centrée (apparaît en bas de l'écran)
-2. **Filtre "Favorites" redondant** → Le coeur existe déjà dans chaque card
-3. **Bouton Export inutile** → Download existe dans chaque card, garder seulement Import en plus visible
-4. **Cards trop petites** → Le titre est tronqué, manque d'espace
-5. **Manque de structure** → Grouper les tracks par catégorie (Classic, African, etc.)
+1. **Rebranding des titres** : Remplacer les formats "// LIBRARY_DATABASE", "NEURAL_LOFI" avec underscores par des titres plus elegants et modernes
+2. **PWA complete** : Transformer l'app en Progressive Web App installable avec manifest, icones, service worker et popup d'installation intelligente
 
 ---
 
-## Fichiers impactés
+## Fichiers impactes
 
 | Fichier | Modification |
-|---------|-------------|
-| `app/globals.css` | Fix modal centrage, styles sections catégorie, agrandir cards, bouton Import |
-| `components/library/Library.tsx` | Supprimer filter bar, ajouter groupement par catégorie, simplifier interface |
-| `components/library/TrackCard.tsx` | Agrandir les cards, titre sur 2 lignes max |
-| `app/page.tsx` | Supprimer props obsolètes (showFavoritesFilter, onExport) |
-| `components/sidebar/FavoritesSection.tsx` | À conserver ou supprimer selon décision |
+|---------|--------------|
+| `app/layout.tsx` | Metadata, favicon, manifest link, viewport PWA |
+| `app/page.tsx` | Logo "Neural Lofi", titres des sections |
+| `app/globals.css` | Style du nouveau logo + popup PWA |
+| `public/manifest.json` | **NOUVEAU** - Manifest PWA |
+| `public/icons/` | **NOUVEAU** - Icones PWA (192x192, 512x512) |
+| `public/favicon.ico` | **NOUVEAU** - Favicon navigateur |
+| `components/pwa/InstallPrompt.tsx` | **NOUVEAU** - Popup d'installation PWA |
+| `hooks/usePWAInstall.ts` | **NOUVEAU** - Hook gestion installation PWA |
 
 ---
 
-## Étapes d'implémentation
+## Etapes d'implementation
 
-### Étape 1 : Fix Modal de suppression
-- Retirer `position: relative` et `overflow: hidden` du CSS `.delete-dialog`
-- S'assurer que le Dialog shadcn reste centré (`fixed top-[50%] left-[50%]`)
+### Phase 1 : Rebranding des titres
 
-### Étape 2 : Simplifier la barre de filtre
-- Supprimer le bouton "Favorites" de la Library
-- Supprimer le bouton "Export"
-- Garder uniquement "Import MP3" en plus gros et visible
-- Afficher le compteur de tracks
+#### 1.1 Renommer le logo
+| Avant | Apres |
+|-------|-------|
+| `NEURAL_LOFI` | `Neural Lofi` |
 
-### Étape 3 : Grouper les tracks par catégorie
-- Grouper les tracks par `style` (Classic, Indian, African, Asian, Latino)
-- Ajouter des section headers pour chaque catégorie
-- Afficher l'icône et le nom de la catégorie
-- Afficher le nombre de tracks par catégorie
+Fichiers a modifier :
+- `app/page.tsx:55` - Header mobile
+- `app/page.tsx:60` - Sidebar desktop
+- `app/layout.tsx:14` - Metadata title
+- `app/layout.tsx:18` - Metadata authors
 
-### Étape 4 : Agrandir les TrackCards
-- Augmenter le `min-width` des cards dans la grille
-- Permettre au titre de s'afficher sur 2 lignes (`line-clamp-2`)
-- Meilleur espacement interne (padding)
+#### 1.2 Renommer les titres de sections
+| Avant | Apres |
+|-------|-------|
+| `// LIBRARY_DATABASE` | `Library` |
+| `// CREATE_TRACK` | `Create` |
 
-### Étape 5 : Nettoyer les props obsolètes
-- Retirer `onExport`, `externalShowFavorites`, `onFavoritesFilterChange` de Library
-- Mettre à jour `app/page.tsx` pour ne plus passer ces props
-- Décider si FavoritesSection dans sidebar est toujours pertinente
+Fichiers a modifier :
+- `app/page.tsx:71` - Titre library desktop
+- `app/page.tsx:92` - Titre library mobile
+- `app/page.tsx:110` - Titre create mobile
+
+#### 1.3 Mettre a jour le CSS du logo
+- Garder le gradient cyan-pink
+- Ajouter un effet glow subtil
+- Espacement entre "Neural" et "Lofi"
 
 ---
 
-## CSS à ajouter
+### Phase 2 : Assets PWA
 
-```css
-/* Import button - Plus visible */
-.import-btn {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.75rem 1.25rem;
-  background: rgba(111, 231, 243, 0.1);
-  border: 1px solid var(--cyan-ice);
-  color: var(--cyan-ice);
-  border-radius: 8px;
-  font-family: var(--font-mono);
-  font-size: 0.85rem;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
+#### 2.1 Creer les icones
+Generer des icones aux formats :
+```
+public/
+├── favicon.ico          (32x32)
+├── apple-touch-icon.png (180x180)
+└── icons/
+    ├── icon-72x72.png
+    ├── icon-96x96.png
+    ├── icon-128x128.png
+    ├── icon-144x144.png
+    ├── icon-152x152.png
+    ├── icon-192x192.png
+    ├── icon-384x384.png
+    └── icon-512x512.png
+```
 
-/* Section headers par catégorie */
-.section-header {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 0.75rem 1rem;
-  margin-bottom: 1rem;
-  border-left: 3px solid;
-  background: rgba(255, 255, 255, 0.02);
-}
+Design : Onde sonore stylisee ou "N" avec effet neon gradient cyan/pink sur fond sombre
 
-/* Track cards plus grandes */
-.tracks-grid {
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+#### 2.2 Creer le manifest.json
+```json
+{
+  "name": "Neural Lofi",
+  "short_name": "Neural Lofi",
+  "description": "AI-powered Lo-Fi music generator",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#050511",
+  "theme_color": "#050511",
+  "orientation": "portrait-primary",
+  "icons": [
+    { "src": "/icons/icon-192x192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icons/icon-512x512.png", "sizes": "512x512", "type": "image/png" }
+  ]
 }
+```
 
-.track-card {
-  padding: 1.75rem;
-}
-
-.track-title {
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
+#### 2.3 Mettre a jour layout.tsx
+Ajouter dans `<head>` :
+```tsx
+<link rel="manifest" href="/manifest.json" />
+<link rel="icon" href="/favicon.ico" sizes="32x32" />
+<link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 ```
 
 ---
 
-## Risques et considérations
+### Phase 3 : Popup d'installation PWA
 
-- **FavoritesSection** : Si on la garde dans la sidebar, il faut qu'elle serve à quelque chose (peut-être filtrer uniquement les favoris ?)
-- **Mobile** : Vérifier que le groupement par catégorie fonctionne bien sur mobile
-- **Performance** : Le regroupement par catégorie ne devrait pas impacter les performances
+#### 3.1 Creer le hook usePWAInstall
+```typescript
+// hooks/usePWAInstall.ts
+interface UsePWAInstall {
+  canInstall: boolean;      // L'event beforeinstallprompt a ete capture
+  isInstalled: boolean;     // App deja installee (display-mode: standalone)
+  isDismissed: boolean;     // User a clique "Ne plus demander"
+  promptInstall: () => void; // Declenche l'installation
+  dismissForever: () => void; // Masque definitivement
+}
+```
+
+Logique :
+1. Capturer `beforeinstallprompt` event
+2. Verifier `window.matchMedia('(display-mode: standalone)')`
+3. Lire/ecrire `localStorage.getItem('pwa-dismissed')`
+
+#### 3.2 Creer le composant InstallPrompt
+```typescript
+// components/pwa/InstallPrompt.tsx
+```
+
+Design cyberpunk :
+- Glassmorphism (backdrop-blur + border subtle)
+- Glow neon cyan/pink
+- Position : fixed bottom avec animation slide-up
+- Contenu :
+  - Icone de l'app (32x32)
+  - Titre : "Installer Neural Lofi"
+  - Description : "Acces rapide et experience optimale"
+  - Bouton "Installer" (style cyan neon)
+  - Bouton "Plus tard" (style ghost)
+  - Checkbox "Ne plus demander"
+
+#### 3.3 Integrer dans la page
+Ajouter `<InstallPrompt />` dans `app/page.tsx` (composant client)
 
 ---
 
-## Critères de succès
+## Criteres de succes
 
-- [ ] Modal de suppression centrée au milieu de l'écran
-- [ ] Plus de filtre "Favorites" redondant dans la Library
-- [ ] Bouton "Import MP3" bien visible, pas d'Export
-- [ ] Titres des tracks lisibles (pas tronqués)
-- [ ] Tracks groupées par catégorie avec headers visuels
-- [ ] Cards plus grandes et aérées
-- [ ] Design cohérent avec l'esthétique cyberpunk
-
----
-
-## Décision requise
-
-> **Question** : Voulez-vous garder la section "Favorites" dans la sidebar gauche ?
-> Si oui, elle filtrera les tracks pour n'afficher que les favoris.
-> Si non, elle sera supprimée.
+- [ ] Logo affiche "Neural Lofi" (sans underscore ni //)
+- [ ] Titres de sections elegants : "Library", "Create"
+- [ ] Favicon visible dans l'onglet du navigateur
+- [ ] manifest.json valide (Chrome DevTools > Application > Manifest)
+- [ ] Popup d'installation s'affiche sur Chrome/Edge (desktop + mobile)
+- [ ] L'utilisateur peut cliquer "Ne plus demander" et la popup disparait definitivement
+- [ ] L'app est installable comme PWA
+- [ ] Design de la popup coherent avec le theme cyberpunk
 
 ---
 
-**Statut** : En attente de validation
+## Notes techniques
 
-Lancez `/task` pour créer les tâches d'implémentation.
+### Support navigateur pour beforeinstallprompt
+- Chrome/Edge : Supporte
+- Firefox : Non supporte (pas de popup, installation manuelle)
+- Safari iOS : Non supporte (instructions manuelles "Ajouter a l'ecran d'accueil")
+
+### Generation des icones
+Option 1 : Utiliser un outil en ligne (realfavicongenerator.net)
+Option 2 : Creer un SVG scalable et le convertir
+
+---
+
+**Statut** : Pret pour implementation
+
+Lancer l'implementation pour commencer.
