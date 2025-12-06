@@ -96,11 +96,16 @@ export async function generateMusic(
     }
 
     const data = await response.json();
+    console.log('[MusicGPT] Generate response:', JSON.stringify(data, null, 2));
 
     // Response format: { success, message, task_id, conversion_id_1, conversion_id_2, eta }
     if (!data.success) {
       throw new Error(data.message || 'MusicGPT API returned unsuccessful response');
     }
+
+    console.log('[MusicGPT] Generation started! Task ID:', data.task_id);
+    console.log('[MusicGPT] Conversion IDs:', data.conversion_id_1, data.conversion_id_2);
+    console.log('[MusicGPT] ETA:', data.eta, 'seconds');
 
     // Update task with MusicGPT IDs
     taskStore.set(taskId, {
@@ -269,6 +274,8 @@ async function fetchConversionStatus(conversionId: string): Promise<{
     url.searchParams.set('conversionType', 'MUSIC_AI');
     url.searchParams.set('conversion_id', conversionId);
 
+    console.log('[MusicGPT] Fetching status:', url.toString());
+
     const response = await fetch(url.toString(), {
       headers: {
         'Authorization': MUSICGPT_API_KEY,
@@ -276,11 +283,17 @@ async function fetchConversionStatus(conversionId: string): Promise<{
     });
 
     if (!response.ok) {
+      const errorText = await response.text();
+      console.error('[MusicGPT] Status check failed:', response.status, errorText);
       return null;
     }
 
-    return response.json();
-  } catch {
+    const data = await response.json();
+    console.log('[MusicGPT] Status response:', JSON.stringify(data, null, 2));
+
+    return data;
+  } catch (error) {
+    console.error('[MusicGPT] Status check error:', error);
     return null;
   }
 }
