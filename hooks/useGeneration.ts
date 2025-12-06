@@ -82,6 +82,20 @@ export function useGeneration(options: UseGenerationOptions = {}): UseGeneration
           setProgress(100);
           setEta(0);
           addMessage('SEQUENCE COMPLETE', 'success');
+
+          // Store tracks in localStorage for persistence on Vercel
+          if (data.files && data.files.length > 0) {
+            const existingTracks = JSON.parse(localStorage.getItem('neural-lofi-tracks') || '[]');
+            const newTracks = data.files.map((file: { url: string; version: number }, index: number) => ({
+              id: `${taskId}_v${file.version}`,
+              title: `Lo-Fi Track #${taskId.slice(0, 4)}-${file.version}`,
+              style: 'classic', // Default, could be passed from request
+              url: file.url,
+              createdAt: new Date().toISOString(),
+            }));
+            localStorage.setItem('neural-lofi-tracks', JSON.stringify([...newTracks, ...existingTracks]));
+          }
+
           toast.success('Track generated!', {
             description: 'Your Lo-Fi track is ready to play.',
           });
