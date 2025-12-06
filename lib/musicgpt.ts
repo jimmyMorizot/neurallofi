@@ -54,14 +54,20 @@ export async function generateMusic(
     createdAt: new Date(),
   });
 
-  // If no API key, use mock mode
-  if (!MUSICGPT_API_KEY || MUSICGPT_API_KEY === 'your_api_key_here') {
+  // Check if we should use mock mode
+  const apiKey = MUSICGPT_API_KEY?.trim() || '';
+  const isValidApiKey = apiKey.length > 20 && !apiKey.includes('your_api_key');
+
+  console.log('[MusicGPT] API Key status:', isValidApiKey ? 'Valid key detected' : 'No valid key - using MOCK mode');
+
+  // If no valid API key, use mock mode
+  if (!isValidApiKey) {
     console.log('[MusicGPT Mock] Starting generation with prompt:', prompt);
 
     // Simulate async generation
     simulateMockGeneration(taskId, style);
 
-    return { taskId, eta: 30 }; // Mock ETA of 30 seconds
+    return { taskId, eta: 15 }; // Mock ETA
   }
 
   try {
