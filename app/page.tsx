@@ -2,7 +2,6 @@
 
 import { useEffect } from 'react';
 import { Menu } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from '@/components/ui/sheet';
 import { GeneratorPanel } from '@/components/generator/GeneratorPanel';
 import { Library } from '@/components/library/Library';
@@ -38,56 +37,38 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen pb-[var(--player-height)]">
-      {/* Mobile Header */}
-      <header className="md:hidden flex items-center justify-between p-4 border-b border-white/[0.08] glass">
-        <h1 className="text-lg font-bold bg-gradient-to-r from-white to-[var(--neon-cyan)] bg-clip-text text-transparent">
-          NEURAL_LOFI
-        </h1>
+    <>
+      {/* Scanlines overlay */}
+      <div className="scanlines" />
+
+      {/* 1. MOBILE HEADER (visible uniquement mobile) */}
+      <header className="mobile-header lg:hidden">
+        <div className="logo">NEURAL_LOFI</div>
         <Sheet>
           <SheetTrigger asChild>
-            <Button variant="ghost" size="icon">
+            <button className="absolute right-4 p-2 text-white/70 hover:text-white">
               <Menu className="h-5 w-5" />
-            </Button>
+            </button>
           </SheetTrigger>
-          <SheetContent side="left" className="w-[320px] bg-[var(--neural-bg)] p-0">
+          <SheetContent side="left" className="w-[300px] bg-[var(--bg-sidebar)] p-0 border-r border-white/10">
             <SheetTitle className="sr-only">Generator Panel</SheetTitle>
-            <div className="p-4">
+            <div className="p-6 h-full overflow-y-auto">
+              <div className="logo mb-8">NEURAL_LOFI</div>
               <GeneratorPanel onGenerationComplete={handleGenerationComplete} />
             </div>
           </SheetContent>
         </Sheet>
       </header>
 
-      {/* Desktop Layout */}
-      <div className="hidden md:grid md:grid-cols-[var(--sidebar-width)_1fr] md:h-screen md:overflow-hidden">
-        {/* Sidebar - Generator */}
-        <aside className="h-full overflow-y-auto border-r border-white/[0.08] bg-black/50 p-6">
-          {/* Logo */}
-          <div className="mb-8 pb-4 border-b border-white/[0.08]">
-            <h1 className="text-xl font-bold bg-gradient-to-r from-white to-[var(--neon-cyan)] bg-clip-text text-transparent">
-              NEURAL_LOFI
-            </h1>
-          </div>
+      {/* 2. SIDEBAR (visible uniquement desktop via CSS) */}
+      <aside className="sidebar">
+        <div className="logo">NEURAL_LOFI</div>
+        <GeneratorPanel onGenerationComplete={handleGenerationComplete} />
+      </aside>
 
-          <GeneratorPanel onGenerationComplete={handleGenerationComplete} />
-        </aside>
-
-        {/* Main - Library */}
-        <main className="h-full overflow-y-auto p-6 pb-[calc(var(--player-height)+1.5rem)]">
-          <Library
-            tracks={tracks}
-            currentTrackId={currentTrack?.id || null}
-            isPlaying={isPlaying}
-            onPlay={play}
-            onPause={pause}
-            isLoading={isLoading}
-          />
-        </main>
-      </div>
-
-      {/* Mobile Layout */}
-      <main className="md:hidden p-4">
+      {/* 3. MAIN CONTENT */}
+      <main className="main-content">
+        <h2 className="library-title">// LIBRARY_DATABASE</h2>
         <Library
           tracks={tracks}
           currentTrackId={currentTrack?.id || null}
@@ -98,7 +79,7 @@ export default function Home() {
         />
       </main>
 
-      {/* Player Bar */}
+      {/* 4. PLAYER BAR (fixed bottom) */}
       <PlayerBar
         currentTrack={currentTrack}
         isPlaying={isPlaying}
@@ -111,6 +92,6 @@ export default function Home() {
         onSeek={seek}
         onVolumeChange={setVolume}
       />
-    </div>
+    </>
   );
 }

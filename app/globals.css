@@ -1,260 +1,468 @@
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700;800&display=swap');
 @import "tailwindcss";
 
-/* ============================================
-   Neural_Lofi - Cyberpunk Theme
-   ============================================ */
-
-/* Google Font */
-@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&display=swap');
-
-/* ============================================
-   CSS Variables - Palette Neural_Lofi
-   ============================================ */
+/* =========================================
+   VARIABLES (CYBERPUNK PALETTE - MAQUETTE)
+   ========================================= */
 :root {
-  /* Background colors */
-  --background: 240 10% 4%;
-  --foreground: 0 0% 100%;
+  /* Backgrounds */
+  --bg-deep: #050511;
+  --bg-sidebar: #0b0c24;
+  --bg-surface: #151636;
 
-  /* Surface colors */
-  --card: 240 10% 7%;
-  --card-foreground: 0 0% 100%;
-  --popover: 240 10% 7%;
-  --popover-foreground: 0 0% 100%;
+  /* Neon colors */
+  --cyan-ice: #6fe7f3;
+  --blue-electric: #3a86ff;
+  --pink-neon: #f72585;
+  --purple-deep: #560bad;
 
-  /* Primary - Cyan Neon */
-  --primary: 185 100% 50%;
-  --primary-foreground: 240 10% 4%;
+  /* Layout */
+  --sidebar-width: 300px;
+  --player-height: 80px;
 
-  /* Secondary - Magenta Neon */
-  --secondary: 320 100% 50%;
+  /* Font */
+  --font-mono: 'JetBrains Mono', monospace;
+
+  /* shadcn compatibility */
+  --background: 240 15% 3%;
+  --foreground: 226 100% 94%;
+  --card: 240 20% 8%;
+  --card-foreground: 226 100% 94%;
+  --popover: 240 20% 8%;
+  --popover-foreground: 226 100% 94%;
+  --primary: 187 87% 69%;
+  --primary-foreground: 240 15% 3%;
+  --secondary: 330 94% 56%;
   --secondary-foreground: 0 0% 100%;
-
-  /* Accent - Purple */
-  --accent: 263 70% 58%;
+  --accent: 271 100% 36%;
   --accent-foreground: 0 0% 100%;
-
-  /* Muted */
-  --muted: 240 10% 15%;
-  --muted-foreground: 240 5% 55%;
-
-  /* Destructive */
+  --muted: 240 20% 15%;
+  --muted-foreground: 215 20% 65%;
   --destructive: 0 84% 60%;
   --destructive-foreground: 0 0% 100%;
-
-  /* Border and Ring */
-  --border: 240 10% 20%;
-  --input: 240 10% 20%;
-  --ring: 185 100% 50%;
-
-  /* Chart colors */
-  --chart-1: 185 100% 50%;
-  --chart-2: 320 100% 50%;
-  --chart-3: 263 70% 58%;
-  --chart-4: 142 76% 36%;
-  --chart-5: 39 100% 50%;
-
-  /* Neural_Lofi specific */
-  --neural-bg: #0a0a0f;
-  --neural-surface: #12121a;
-  --neural-glass: rgba(18, 18, 26, 0.65);
-  --neural-border: rgba(255, 255, 255, 0.08);
-
-  --neon-cyan: #00f0ff;
-  --neon-magenta: #ff00aa;
-  --neon-purple: #8b5cf6;
-  --neon-green: #00ff88;
-  --neon-orange: #ff9900;
-  --neon-pink: #ec4899;
-
-  /* Player height */
-  --player-height: 90px;
-  --sidebar-width: 360px;
-
-  /* Radius */
+  --border: 240 20% 15%;
+  --input: 240 20% 15%;
+  --ring: 187 87% 69%;
   --radius: 0.5rem;
 }
 
-/* ============================================
-   Tailwind Theme Extension
-   ============================================ */
+/* =========================================
+   TAILWIND THEME EXTENSION
+   ========================================= */
 @theme inline {
-  --color-background: hsl(var(--background));
-  --color-foreground: hsl(var(--foreground));
+  --color-background: var(--bg-deep);
+  --color-foreground: #e0e7ff;
   --color-card: hsl(var(--card));
   --color-card-foreground: hsl(var(--card-foreground));
   --color-popover: hsl(var(--popover));
   --color-popover-foreground: hsl(var(--popover-foreground));
-  --color-primary: hsl(var(--primary));
-  --color-primary-foreground: hsl(var(--primary-foreground));
-  --color-secondary: hsl(var(--secondary));
-  --color-secondary-foreground: hsl(var(--secondary-foreground));
+  --color-primary: var(--cyan-ice);
+  --color-primary-foreground: var(--bg-deep);
+  --color-secondary: var(--pink-neon);
+  --color-secondary-foreground: #fff;
   --color-muted: hsl(var(--muted));
   --color-muted-foreground: hsl(var(--muted-foreground));
-  --color-accent: hsl(var(--accent));
-  --color-accent-foreground: hsl(var(--accent-foreground));
+  --color-accent: var(--purple-deep);
+  --color-accent-foreground: #fff;
   --color-destructive: hsl(var(--destructive));
   --color-destructive-foreground: hsl(var(--destructive-foreground));
   --color-border: hsl(var(--border));
   --color-input: hsl(var(--input));
-  --color-ring: hsl(var(--ring));
-
-  /* Custom colors */
-  --color-neural-bg: var(--neural-bg);
-  --color-neural-surface: var(--neural-surface);
-  --color-neon-cyan: var(--neon-cyan);
-  --color-neon-magenta: var(--neon-magenta);
-  --color-neon-purple: var(--neon-purple);
-  --color-neon-green: var(--neon-green);
-  --color-neon-orange: var(--neon-orange);
-  --color-neon-pink: var(--neon-pink);
-
-  /* Typography */
-  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
-  --font-sans: 'JetBrains Mono', ui-monospace, monospace;
-
-  /* Animations */
-  --animate-pulse-glow: pulse-glow 2s ease-in-out infinite;
-  --animate-gradient-shift: gradient-shift 8s ease infinite;
-  --animate-bars-dance: bars-dance 0.8s ease-in-out infinite alternate;
-  --animate-blink: blink 1s step-end infinite;
+  --color-ring: var(--cyan-ice);
+  --font-mono: var(--font-mono);
+  --font-sans: var(--font-mono);
 }
 
-/* ============================================
-   Base Styles
-   ============================================ */
+/* =========================================
+   RESET & BASE
+   ========================================= */
 * {
-  border-color: hsl(var(--border));
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  border-color: rgba(255, 255, 255, 0.1);
 }
 
 body {
-  background: var(--neural-bg);
-  color: hsl(var(--foreground));
   font-family: var(--font-mono);
+  background-color: var(--bg-deep);
+  color: #e0e7ff;
+  background: radial-gradient(circle at 50% -20%, #1a1b4b 0%, var(--bg-deep) 60%);
   min-height: 100vh;
-  overflow-x: hidden;
 }
 
-/* ============================================
-   Scrollbar Styling
-   ============================================ */
+/* =========================================
+   SCROLLBAR
+   ========================================= */
 ::-webkit-scrollbar {
   width: 6px;
-  height: 6px;
 }
 
 ::-webkit-scrollbar-track {
-  background: var(--neural-bg);
+  background: var(--bg-deep);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: hsl(var(--muted));
+  background: var(--blue-electric);
   border-radius: 3px;
 }
 
-::-webkit-scrollbar-thumb:hover {
-  background: var(--neon-purple);
-}
+/* =========================================
+   LAYOUT SYSTEM (CRITIQUE)
+   ========================================= */
 
-/* ============================================
-   Glass Effect
-   ============================================ */
-.glass {
-  background: var(--neural-glass);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid var(--neural-border);
-}
-
-/* ============================================
-   Glow Effects
-   ============================================ */
-.glow-cyan {
-  box-shadow: 0 0 20px rgba(0, 240, 255, 0.3);
-}
-
-.glow-magenta {
-  box-shadow: 0 0 20px rgba(255, 0, 170, 0.3);
-}
-
-.glow-purple {
-  box-shadow: 0 0 20px rgba(139, 92, 246, 0.3);
-}
-
-.text-glow {
-  text-shadow: 0 0 10px rgba(0, 240, 255, 0.5);
-}
-
-.text-glow-magenta {
-  text-shadow: 0 0 10px rgba(255, 0, 170, 0.5);
-}
-
-/* ============================================
-   Scanlines Effect (CRT)
-   ============================================ */
-.scanlines::before {
-  content: '';
+/* SIDEBAR - Fixed left */
+.sidebar {
   position: fixed;
   top: 0;
   left: 0;
+  width: var(--sidebar-width);
+  height: calc(100vh - var(--player-height));
+  background: var(--bg-sidebar);
+  border-right: 1px solid rgba(111, 231, 243, 0.1);
+  overflow-y: auto;
+  z-index: 50;
+  padding: 2rem;
+  display: none;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+/* MOBILE HEADER */
+.mobile-header {
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-sidebar);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  position: sticky;
+  top: 0;
+  z-index: 40;
+}
+
+/* MAIN CONTENT */
+.main-content {
   width: 100%;
-  height: 100%;
-  background: repeating-linear-gradient(
-    0deg,
-    transparent,
-    transparent 2px,
-    rgba(0, 0, 0, 0.1) 2px,
-    rgba(0, 0, 0, 0.1) 4px
-  );
-  pointer-events: none;
-  z-index: 9999;
-  opacity: 0.4;
+  padding: 2rem;
+  padding-bottom: calc(var(--player-height) + 40px);
+  min-height: 100vh;
 }
 
-/* ============================================
-   Background Gradient Animation
-   ============================================ */
-.bg-neural-gradient::before {
-  content: '';
+/* PLAYER BAR - Fixed bottom */
+.player-bar {
   position: fixed;
-  top: -50%;
-  left: -50%;
-  width: 200%;
-  height: 200%;
-  background:
-    radial-gradient(circle at center, rgba(139, 92, 246, 0.08) 0%, transparent 40%),
-    radial-gradient(circle at 80% 20%, rgba(0, 240, 255, 0.05) 0%, transparent 30%);
-  animation: gradient-shift 20s ease-in-out infinite alternate;
-  z-index: -1;
-  pointer-events: none;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: var(--player-height);
+  background: rgba(5, 5, 17, 0.95);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 2rem;
+  z-index: 100;
+  backdrop-filter: blur(20px);
 }
 
-/* ============================================
-   Keyframe Animations
-   ============================================ */
+/* =========================================
+   RESPONSIVE (DESKTOP >= 1024px)
+   ========================================= */
+@media (min-width: 1024px) {
+  .sidebar {
+    display: flex;
+  }
+
+  .mobile-header {
+    display: none !important;
+  }
+
+  .main-content {
+    margin-left: var(--sidebar-width);
+    width: calc(100% - var(--sidebar-width));
+  }
+}
+
+/* =========================================
+   LOGO
+   ========================================= */
+.logo {
+  font-size: 1.5rem;
+  font-weight: 800;
+  letter-spacing: -1px;
+  background: linear-gradient(90deg, var(--cyan-ice), var(--pink-neon));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-shadow: 0 0 15px rgba(58, 134, 255, 0.4);
+}
+
+/* =========================================
+   SECTION TITLES
+   ========================================= */
+.section-title {
+  font-size: 0.7rem;
+  color: #94a3b8;
+  margin-bottom: 1rem;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  border-left: 2px solid var(--pink-neon);
+  padding-left: 0.5rem;
+}
+
+/* =========================================
+   STYLE GRID & CARDS
+   ========================================= */
+.style-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.8rem;
+}
+
+.style-card {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 1rem;
+  border-radius: 8px;
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.2s ease;
+  font-size: 0.85rem;
+}
+
+.style-card:hover {
+  border-color: var(--cyan-ice);
+  background: rgba(111, 231, 243, 0.05);
+}
+
+.style-card.selected {
+  border-color: var(--cyan-ice);
+  background: rgba(111, 231, 243, 0.15);
+  box-shadow: 0 0 15px rgba(111, 231, 243, 0.1);
+}
+
+.style-card-span-2 {
+  grid-column: span 2;
+}
+
+/* =========================================
+   TEXTURE BUTTONS
+   ========================================= */
+.texture-btn {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 0.8rem;
+  color: #e0e7ff;
+}
+
+.texture-btn:hover {
+  border-color: var(--cyan-ice);
+}
+
+.texture-btn.active {
+  border-color: var(--pink-neon);
+  color: var(--pink-neon);
+  background: rgba(247, 37, 133, 0.1);
+}
+
+/* =========================================
+   GENERATE BUTTON
+   ========================================= */
+.btn-generate {
+  width: 100%;
+  padding: 1rem;
+  background: transparent;
+  border: 1px solid var(--blue-electric);
+  color: var(--blue-electric);
+  font-weight: 700;
+  cursor: pointer;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  transition: all 0.3s ease;
+  box-shadow: 0 0 10px rgba(58, 134, 255, 0.1);
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  border-radius: 4px;
+}
+
+.btn-generate:hover {
+  background: var(--blue-electric);
+  color: #fff;
+  box-shadow: 0 0 25px rgba(58, 134, 255, 0.5);
+}
+
+.btn-generate:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-generate.loading {
+  animation: pulse-glow 2s infinite;
+}
+
+/* =========================================
+   STATUS CONSOLE
+   ========================================= */
+.status-console {
+  background: #000;
+  border: 1px solid #333;
+  border-radius: 4px;
+  padding: 1rem;
+  font-size: 0.7rem;
+  color: var(--cyan-ice);
+  font-family: monospace;
+  min-height: 80px;
+  overflow-y: auto;
+  max-height: 150px;
+}
+
+.status-console .line {
+  margin-bottom: 0.25rem;
+}
+
+.status-console .line.success {
+  color: #00ff88;
+}
+
+.status-console .line.error {
+  color: var(--pink-neon);
+}
+
+.status-console .line.process {
+  color: var(--cyan-ice);
+}
+
+.cursor-blink {
+  animation: blink 1s step-end infinite;
+}
+
+/* =========================================
+   TRACKS GRID
+   ========================================= */
+.tracks-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1.5rem;
+}
+
+/* =========================================
+   TRACK CARD
+   ========================================= */
+.track-card {
+  background: rgba(21, 22, 54, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  padding: 1.5rem;
+  border-radius: 12px;
+  position: relative;
+  overflow: hidden;
+  backdrop-filter: blur(10px);
+  transition: all 0.2s ease;
+}
+
+.track-card:hover {
+  transform: translateY(-3px);
+  border-color: var(--blue-electric);
+}
+
+.track-card.playing {
+  border-color: var(--pink-neon);
+  box-shadow: 0 0 20px rgba(247, 37, 133, 0.2);
+}
+
+.track-title {
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+  font-size: 1rem;
+}
+
+/* =========================================
+   BADGES
+   ========================================= */
+.badge {
+  font-size: 0.6rem;
+  padding: 2px 6px;
+  border-radius: 4px;
+  border: 1px solid;
+  margin-right: 5px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.badge-cyan {
+  color: var(--cyan-ice);
+  border-color: var(--cyan-ice);
+}
+
+.badge-pink {
+  color: var(--pink-neon);
+  border-color: var(--pink-neon);
+}
+
+.badge-blue {
+  color: var(--blue-electric);
+  border-color: var(--blue-electric);
+}
+
+.badge-purple {
+  color: var(--purple-deep);
+  border-color: var(--purple-deep);
+}
+
+.badge-muted {
+  color: #aaa;
+  border-color: #555;
+}
+
+/* =========================================
+   PROGRESS BAR
+   ========================================= */
+.progress-bar {
+  width: 100%;
+  height: 4px;
+  background: #333;
+  position: relative;
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--cyan-ice), var(--pink-neon));
+  box-shadow: 0 0 10px var(--pink-neon);
+  transition: width 0.1s ease;
+}
+
+/* =========================================
+   SCANLINES
+   ========================================= */
+.scanlines {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 999;
+  background: repeating-linear-gradient(
+    to bottom,
+    transparent 0px,
+    transparent 2px,
+    rgba(0, 0, 0, 0.1) 3px
+  );
+  opacity: 0.5;
+}
+
+/* =========================================
+   KEYFRAME ANIMATIONS
+   ========================================= */
 @keyframes pulse-glow {
   0%, 100% {
-    box-shadow: 0 0 20px rgba(0, 240, 255, 0.3);
+    box-shadow: 0 0 10px rgba(58, 134, 255, 0.3);
   }
   50% {
-    box-shadow: 0 0 30px rgba(0, 240, 255, 0.6);
-  }
-}
-
-@keyframes gradient-shift {
-  0% {
-    transform: translate(0, 0);
-  }
-  100% {
-    transform: translate(50px, 50px);
-  }
-}
-
-@keyframes bars-dance {
-  0% {
-    height: 10%;
-  }
-  100% {
-    height: 100%;
+    box-shadow: 0 0 25px rgba(58, 134, 255, 0.6);
   }
 }
 
@@ -267,182 +475,161 @@ body {
   }
 }
 
-@keyframes pulse-border {
+@keyframes bars-dance {
   0% {
-    box-shadow: 0 0 0 0 rgba(0, 240, 255, 0.4);
-  }
-  70% {
-    box-shadow: 0 0 0 10px rgba(0, 240, 255, 0);
+    height: 20%;
   }
   100% {
-    box-shadow: 0 0 0 0 rgba(0, 240, 255, 0);
+    height: 100%;
   }
 }
 
-/* ============================================
-   Section Title Style
-   ============================================ */
-.section-title {
-  font-size: 0.85rem;
-  color: hsl(var(--muted-foreground));
-  text-transform: uppercase;
-  letter-spacing: 1px;
+/* =========================================
+   VISUALIZER
+   ========================================= */
+.visualizer {
   display: flex;
-  align-items: center;
-  gap: 0.5rem;
+  align-items: flex-end;
+  gap: 3px;
+  height: 30px;
 }
 
-.section-title::before {
-  content: '//';
-  color: var(--neon-cyan);
-}
-
-/* ============================================
-   Console Styling
-   ============================================ */
-.console-line {
-  display: flex;
-  gap: 0.5rem;
-  font-size: 0.75rem;
-}
-
-.console-line.success {
-  color: var(--neon-green);
-}
-
-.console-line.process {
-  color: var(--neon-cyan);
-}
-
-.console-line.error {
-  color: var(--neon-magenta);
-}
-
-.console-line.info {
-  color: hsl(var(--muted-foreground));
-}
-
-.cursor-blink {
-  animation: blink 1s step-end infinite;
-}
-
-/* ============================================
-   Progress Bar Gradient
-   ============================================ */
-.progress-gradient {
-  background: linear-gradient(90deg, var(--neon-purple), var(--neon-cyan));
-}
-
-/* ============================================
-   Badge Variants
-   ============================================ */
-.badge-cyan {
-  border-color: var(--neon-cyan);
-  color: var(--neon-cyan);
-}
-
-.badge-magenta {
-  border-color: var(--neon-magenta);
-  color: var(--neon-magenta);
-}
-
-.badge-purple {
-  border-color: var(--neon-purple);
-  color: var(--neon-purple);
-}
-
-.badge-green {
-  border-color: var(--neon-green);
-  color: var(--neon-green);
-}
-
-.badge-orange {
-  border-color: var(--neon-orange);
-  color: var(--neon-orange);
-}
-
-.badge-pink {
-  border-color: var(--neon-pink);
-  color: var(--neon-pink);
-}
-
-/* ============================================
-   Visualizer Bars
-   ============================================ */
 .visualizer-bar {
   width: 4px;
-  background: var(--neon-magenta);
-  animation: bars-dance 0.8s ease-in-out infinite alternate;
+  background: var(--pink-neon);
+  border-radius: 2px;
+  animation: bars-dance 0.5s ease-in-out infinite alternate;
 }
 
 .visualizer-bar:nth-child(1) {
-  animation-delay: 0.1s;
-  background: var(--neon-purple);
+  animation-delay: 0s;
+  background: var(--cyan-ice);
 }
 
 .visualizer-bar:nth-child(2) {
-  animation-delay: 0.2s;
+  animation-delay: 0.1s;
+  background: var(--blue-electric);
 }
 
 .visualizer-bar:nth-child(3) {
-  animation-delay: 0.0s;
-  background: var(--neon-cyan);
+  animation-delay: 0.2s;
 }
 
 .visualizer-bar:nth-child(4) {
-  animation-delay: 0.3s;
+  animation-delay: 0.15s;
+  background: var(--purple-deep);
 }
 
 .visualizer-bar:nth-child(5) {
-  animation-delay: 0.15s;
-  background: var(--neon-purple);
+  animation-delay: 0.05s;
+  background: var(--cyan-ice);
 }
 
-.visualizer-paused .visualizer-bar {
+.visualizer.paused .visualizer-bar {
   animation-play-state: paused;
 }
 
-/* ============================================
-   Track Card Playing State
-   ============================================ */
-.track-playing {
-  border-color: var(--neon-cyan);
-  box-shadow: 0 0 15px rgba(0, 240, 255, 0.15), inset 0 0 20px rgba(0, 240, 255, 0.05);
+/* =========================================
+   LIBRARY TITLE
+   ========================================= */
+.library-title {
+  font-weight: 300;
+  letter-spacing: 2px;
+  margin-bottom: 2rem;
+  color: #fff;
+  font-size: 1.25rem;
 }
 
-.track-playing::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: 0;
-  bottom: 0;
-  width: 4px;
-  background: var(--neon-cyan);
-  box-shadow: 0 0 10px var(--neon-cyan);
+/* =========================================
+   PLAYER SECTIONS
+   ========================================= */
+.player-info {
+  width: 200px;
 }
 
-/* ============================================
-   Button Generate Animation
-   ============================================ */
-.btn-generate-loading {
-  animation: pulse-border 2s infinite;
+.player-info-title {
+  font-weight: 700;
+  font-size: 0.9rem;
 }
 
-/* ============================================
-   Style Card Selection
-   ============================================ */
-.style-card-selected {
-  border-color: var(--neon-cyan);
-  box-shadow: 0 0 15px rgba(0, 240, 255, 0.2);
-  background: rgba(0, 240, 255, 0.05);
+.player-info-status {
+  font-size: 0.7rem;
+  color: var(--cyan-ice);
 }
 
-/* ============================================
-   Texture Toggle Active
-   ============================================ */
-.texture-active {
-  border-color: var(--neon-magenta);
-  color: var(--neon-magenta);
-  background: rgba(255, 0, 170, 0.05);
-  box-shadow: 0 0 10px rgba(255, 0, 170, 0.15);
+.player-controls {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  max-width: 600px;
+}
+
+.player-buttons {
+  font-size: 1.5rem;
+  margin-bottom: 5px;
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
+.player-btn {
+  background: none;
+  border: none;
+  color: #e0e7ff;
+  cursor: pointer;
+  transition: color 0.2s;
+  padding: 0.5rem;
+}
+
+.player-btn:hover {
+  color: var(--cyan-ice);
+}
+
+.player-btn-main {
+  font-size: 2rem;
+}
+
+.player-volume {
+  width: 200px;
+  text-align: right;
+  color: var(--blue-electric);
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
+/* =========================================
+   EMPTY STATE
+   ========================================= */
+.empty-state {
+  text-align: center;
+  padding: 4rem 2rem;
+  color: #94a3b8;
+}
+
+.empty-state-icon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+  opacity: 0.5;
+}
+
+/* =========================================
+   UTILITIES
+   ========================================= */
+.text-cyan {
+  color: var(--cyan-ice);
+}
+
+.text-pink {
+  color: var(--pink-neon);
+}
+
+.text-blue {
+  color: var(--blue-electric);
+}
+
+.text-muted {
+  color: #94a3b8;
 }
