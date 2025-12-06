@@ -1,23 +1,11 @@
 import type { MusicStyle, TextureType, GenerationStatus } from '@/types';
 import { buildPrompt } from '@/types';
 import { saveFile } from './filesystem';
+import { getTask, setTask, updateTask, type TaskData } from './taskCache';
 
 // MusicGPT API Configuration - Real API endpoints
 const MUSICGPT_API_URL = process.env.MUSICGPT_API_URL || 'https://api.musicgpt.com';
 const MUSICGPT_API_KEY = process.env.MUSICGPT_API_KEY || '';
-
-// In-memory storage for task status (in production, use Redis or similar)
-const taskStore = new Map<string, {
-  status: GenerationStatus;
-  style: MusicStyle;
-  progress?: string;
-  files?: { url: string; version: number }[];
-  error?: string;
-  createdAt: Date;
-  musicGptTaskId?: string;
-  conversionId1?: string;
-  conversionId2?: string;
-}>();
 
 /**
  * Get the music style label for the API
@@ -39,19 +27,21 @@ function getStyleLabel(style: MusicStyle): string {
  */
 export async function generateMusic(
   style: MusicStyle,
-  textures: TextureType[]
+  textures: TextureType[],
+  withVocals: boolean = false,
+  customLyrics?: string
 ): Promise<{ taskId: string; eta: number }> {
   const prompt = buildPrompt(style, textures);
 
   // Generate a unique local task ID
   const taskId = generateTaskId();
 
-  // Store initial task status
-  taskStore.set(taskId, {
+  // Store initial task status (file-based for serverless persistence)
+  await setTask(taskId, {
     status: 'pending',
     style,
     progress: 'Initializing generation...',
-    createdAt: new Date(),
+    createdAt: new Date().toISOString(),
   });
 
   // Check if we should use mock mode
@@ -82,11 +72,11 @@ export async function generateMusic(
       body: JSON.stringify({
         prompt: prompt,
         music_style: getStyleLabel(style),
-        make_instrumental: true,
-        // lyrics: '', // Empty for instrumental
-        // vocal_only: false,
-        // voice_id: '',
-        // webhook_url: '', // We'll poll instead
+        make_instrumental: !withVocals, // true = instrumental only, false = with AI vocals
+        vocal_only: false, // false = music + vocals, true = vocals only (a cappella)
+        ...(withVocals && customLyrics ? { lyrics: customLyrics } : {}), // Custom or AI-generated lyrics
+        // voice_id: '', // Default AI voice
+        // webhook_url: '', // We poll instead
       }),
     });
 
@@ -108,8 +98,7 @@ export async function generateMusic(
     console.log('[MusicGPT] ETA:', data.eta, 'seconds');
 
     // Update task with MusicGPT IDs
-    taskStore.set(taskId, {
-      ...taskStore.get(taskId)!,
+    await updateTask(taskId, {
       status: 'processing',
       progress: 'Generation started...',
       musicGptTaskId: data.task_id,
@@ -117,16 +106,14 @@ export async function generateMusic(
       conversionId2: data.conversion_id_2,
     });
 
-    // Start polling for status using conversion IDs
-    pollMusicGPTStatus(taskId, data.conversion_id_1, data.conversion_id_2, style);
+    // No background polling - checkStatus will check MusicGPT directly
 
     return {
       taskId,
       eta: data.eta || 120,
     };
   } catch (error) {
-    taskStore.set(taskId, {
-      ...taskStore.get(taskId)!,
+    await updateTask(taskId, {
       status: 'failed',
       error: error instanceof Error ? error.message : 'Unknown error',
     });
@@ -136,6 +123,7 @@ export async function generateMusic(
 
 /**
  * Check the status of a generation task
+ * Directly queries MusicGPT API if task is still processing
  */
 export async function checkStatus(taskId: string): Promise<{
   status: GenerationStatus;
@@ -143,115 +131,105 @@ export async function checkStatus(taskId: string): Promise<{
   files?: { url: string; version: number }[];
   error?: string;
 }> {
-  const task = taskStore.get(taskId);
+  const task = await getTask(taskId);
 
   if (!task) {
+    console.log('[MusicGPT] Task not found in cache:', taskId);
     return {
       status: 'failed',
       error: 'Task not found',
     };
   }
 
+  // If task is already completed or failed, return cached status
+  if (task.status === 'completed' || task.status === 'failed') {
+    return {
+      status: task.status,
+      progress: task.progress,
+      files: task.files,
+      error: task.error,
+    };
+  }
+
+  // If task is processing and we have conversion IDs, check MusicGPT directly
+  if (task.conversionId1) {
+    try {
+      const result = await fetchConversionStatus(task.conversionId1);
+      const conv = result?.conversion;
+
+      if (!conv) {
+        return {
+          status: 'processing',
+          progress: 'Checking generation status...',
+        };
+      }
+
+      const apiStatus = conv.status?.toUpperCase();
+      console.log('[MusicGPT] Direct status check:', apiStatus);
+
+      // Check if completed
+      if (apiStatus === 'COMPLETED' && conv.conversion_path_1 && conv.conversion_path_2) {
+        console.log('[MusicGPT] Generation complete! Downloading files...');
+
+        // Download and save files
+        const savedFiles = await downloadAndSaveFiles(
+          [
+            { url: conv.conversion_path_1 },
+            { url: conv.conversion_path_2 },
+          ],
+          taskId,
+          task.style
+        );
+
+        // Update cache
+        await updateTask(taskId, {
+          status: 'completed',
+          progress: 'Generation complete!',
+          files: savedFiles,
+        });
+
+        return {
+          status: 'completed',
+          progress: 'Generation complete!',
+          files: savedFiles,
+        };
+      }
+
+      // Check if failed
+      if (apiStatus === 'FAILED' || apiStatus === 'ERROR') {
+        await updateTask(taskId, {
+          status: 'failed',
+          error: conv.message || 'Generation failed',
+        });
+
+        return {
+          status: 'failed',
+          error: conv.message || 'Generation failed',
+        };
+      }
+
+      // Still processing - return status from API
+      return {
+        status: 'processing',
+        progress: `Generating music... (${apiStatus || 'IN_PROGRESS'})`,
+      };
+    } catch (error) {
+      console.error('[MusicGPT] Error checking status:', error);
+      // Return cached status on error
+      return {
+        status: task.status,
+        progress: task.progress,
+      };
+    }
+  }
+
+  // Return cached status (for mock mode or pending tasks)
   return {
     status: task.status,
     progress: task.progress,
     files: task.files,
     error: task.error,
   };
-}
-
-/**
- * Poll MusicGPT API for conversion status
- * Uses: GET /api/public/v1/conversion/{conversionId}
- */
-async function pollMusicGPTStatus(
-  localTaskId: string,
-  conversionId1: string,
-  conversionId2: string,
-  style: MusicStyle
-): Promise<void> {
-  const maxAttempts = 60; // 5 minutes with 5s interval
-  let attempts = 0;
-
-  const poll = async () => {
-    attempts++;
-
-    try {
-      // Check both conversions
-      const [result1, result2] = await Promise.all([
-        fetchConversionStatus(conversionId1),
-        fetchConversionStatus(conversionId2),
-      ]);
-
-      const task = taskStore.get(localTaskId);
-      if (!task) return;
-
-      // Check conversion status (completed, processing, failed, etc.)
-      const conv1 = result1?.conversion;
-      const conv2 = result2?.conversion;
-
-      // Check if both are completed with audio URLs
-      const file1Ready = conv1?.status === 'completed' && conv1?.audio_url;
-      const file2Ready = conv2?.status === 'completed' && conv2?.audio_url;
-
-      if (file1Ready && file2Ready && conv1?.audio_url && conv2?.audio_url) {
-        // Download and save files
-        const savedFiles = await downloadAndSaveFiles(
-          [
-            { url: conv1.audio_url },
-            { url: conv2.audio_url },
-          ],
-          localTaskId,
-          style
-        );
-
-        taskStore.set(localTaskId, {
-          ...task,
-          status: 'completed',
-          progress: 'Generation complete!',
-          files: savedFiles,
-        });
-      } else if (conv1?.status === 'failed' || conv2?.status === 'failed') {
-        // Generation failed
-        taskStore.set(localTaskId, {
-          ...task,
-          status: 'failed',
-          error: conv1?.status_msg || conv2?.status_msg || 'Generation failed',
-        });
-      } else if (attempts < maxAttempts) {
-        // Still processing
-        const progressPercent = Math.min(Math.round((attempts / maxAttempts) * 100), 95);
-        const statusMsg = conv1?.status_msg || conv2?.status_msg || `Generating music... (${progressPercent}%)`;
-        taskStore.set(localTaskId, {
-          ...task,
-          status: 'processing',
-          progress: statusMsg,
-        });
-        setTimeout(poll, 5000);
-      } else {
-        taskStore.set(localTaskId, {
-          ...task,
-          status: 'failed',
-          error: 'Generation timed out',
-        });
-      }
-    } catch (error) {
-      const task = taskStore.get(localTaskId);
-      if (task && attempts < maxAttempts) {
-        // Retry on error
-        setTimeout(poll, 5000);
-      } else if (task) {
-        taskStore.set(localTaskId, {
-          ...task,
-          status: 'failed',
-          error: error instanceof Error ? error.message : 'Unknown error',
-        });
-      }
-    }
-  };
-
-  // Start polling after initial delay
-  setTimeout(poll, 10000); // Wait 10s before first poll
 }
 
 /**
@@ -263,8 +241,9 @@ async function fetchConversionStatus(conversionId: string): Promise<{
   success: boolean;
   conversion?: {
     status: string;
-    status_msg?: string;
-    audio_url?: string;
+    message?: string;
+    conversion_path_1?: string;
+    conversion_path_2?: string;
     title?: string;
     lyrics?: string;
   };
@@ -350,11 +329,10 @@ async function simulateMockGeneration(taskId: string, style: MusicStyle): Promis
   for (const step of steps) {
     await new Promise((resolve) => setTimeout(resolve, step.delay));
 
-    const task = taskStore.get(taskId);
+    const task = await getTask(taskId);
     if (!task) return;
 
-    taskStore.set(taskId, {
-      ...task,
+    await updateTask(taskId, {
       status: 'processing',
       progress: step.progress,
     });
@@ -369,8 +347,7 @@ async function simulateMockGeneration(taskId: string, style: MusicStyle): Promis
     );
 
     if (savedFiles.length > 0) {
-      taskStore.set(taskId, {
-        ...taskStore.get(taskId)!,
+      await updateTask(taskId, {
         status: 'completed',
         progress: 'Generation complete!',
         files: savedFiles,
@@ -380,8 +357,7 @@ async function simulateMockGeneration(taskId: string, style: MusicStyle): Promis
     }
   } catch (error) {
     console.error('[Mock] Error in mock generation:', error);
-    taskStore.set(taskId, {
-      ...taskStore.get(taskId)!,
+    await updateTask(taskId, {
       status: 'failed',
       error: 'Mock generation failed - could not download sample files',
     });
@@ -396,14 +372,6 @@ function generateTaskId(): string {
 }
 
 /**
- * Clean up old tasks from memory
+ * Clean up old tasks from cache
  */
-export function cleanupOldTasks(): void {
-  const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
-
-  for (const [taskId, task] of taskStore.entries()) {
-    if (task.createdAt < oneHourAgo) {
-      taskStore.delete(taskId);
-    }
-  }
-}
+export { cleanupOldTasks } from './taskCache';

@@ -15,7 +15,7 @@ export function TextureSelector({ selected, onToggle, disabled }: TextureSelecto
   return (
     <div>
       <div className="section-title">Textures</div>
-      <div className="flex gap-2 flex-wrap">
+      <div className="texture-grid">
         {textures.map((texture) => {
           const config = TEXTURE_CONFIG[texture];
           const isActive = selected.includes(texture);

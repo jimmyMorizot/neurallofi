@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useCallback, useRef } from 'react';
+import { toast } from 'sonner';
 import type {
   GenerationRequest,
   GenerationStatus,
@@ -81,6 +82,9 @@ export function useGeneration(options: UseGenerationOptions = {}): UseGeneration
           setProgress(100);
           setEta(0);
           addMessage('SEQUENCE COMPLETE', 'success');
+          toast.success('Track generated!', {
+            description: 'Your Lo-Fi track is ready to play.',
+          });
 
           if (onComplete) {
             onComplete();
@@ -88,8 +92,12 @@ export function useGeneration(options: UseGenerationOptions = {}): UseGeneration
         } else if (data.status === 'failed') {
           stopPolling();
           setStatus('failed');
-          setError(data.error || 'Generation failed');
-          addMessage(data.error || 'Generation failed', 'error');
+          const errorMsg = data.error || 'Generation failed';
+          setError(errorMsg);
+          addMessage(errorMsg, 'error');
+          toast.error('Generation failed', {
+            description: errorMsg,
+          });
         } else {
           // Update progress based on time elapsed
           const elapsed = Date.now() - startTimeRef.current;
@@ -159,6 +167,9 @@ export function useGeneration(options: UseGenerationOptions = {}): UseGeneration
         const errorMessage = err instanceof Error ? err.message : 'Unknown error';
         setError(errorMessage);
         addMessage(errorMessage, 'error');
+        toast.error('Failed to start generation', {
+          description: errorMessage,
+        });
       }
     },
     [addMessage, pollStatus, pollingInterval]

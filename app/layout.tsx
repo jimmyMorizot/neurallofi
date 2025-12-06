@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import { JetBrains_Mono } from 'next/font/google';
 import { TooltipProvider } from '@/components/ui/tooltip';
+import { Toaster } from '@/components/ui/sonner';
 import './globals.css';
 
 const jetbrainsMono = JetBrains_Mono({
@@ -36,6 +37,7 @@ export default function RootLayout({
       >
         <TooltipProvider delayDuration={300}>
           {children}
+          <Toaster position="bottom-center" richColors closeButton />
         </TooltipProvider>
       </body>
     </html>

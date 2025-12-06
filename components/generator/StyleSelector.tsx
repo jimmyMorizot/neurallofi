@@ -19,7 +19,6 @@ export function StyleSelector({ selected, onSelect, disabled }: StyleSelectorPro
         {styles.map((style) => {
           const config = STYLE_CONFIG[style];
           const isSelected = selected === style;
-          const isLatino = style === 'latino';
 
           return (
             <button
@@ -29,7 +28,6 @@ export function StyleSelector({ selected, onSelect, disabled }: StyleSelectorPro
               className={cn(
                 'style-card',
                 isSelected && 'selected',
-                isLatino && 'style-card-span-2',
                 disabled && 'opacity-50 cursor-not-allowed'
               )}
             >
