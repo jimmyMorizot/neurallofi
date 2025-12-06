@@ -76,16 +76,23 @@ export function useGeneration(options: UseGenerationOptions = {}): UseGeneration
 
   const saveTracksToLocalStorage = useCallback((taskId: string, style: MusicStyle, files: { url: string; version: number }[]) => {
     const existingTracks = JSON.parse(localStorage.getItem('neural-lofi-tracks') || '[]');
-    const newTracks = files.map((file) => ({
-      id: `${taskId}_v${file.version}`,
-      title: `${style.charAt(0).toUpperCase() + style.slice(1)} Lo-Fi #${taskId.slice(0, 4)}-${file.version}`,
-      style,
-      url: file.url,
-      createdAt: new Date().toISOString(),
-    }));
-    localStorage.setItem('neural-lofi-tracks', JSON.stringify([...newTracks, ...existingTracks]));
-    // Trigger storage event for other components
-    window.dispatchEvent(new Event('storage'));
+    const existingIds = new Set(existingTracks.map((t: { id: string }) => t.id));
+
+    // Only add tracks that don't already exist (prevent duplicates)
+    const newTracks = files
+      .map((file) => ({
+        id: `${taskId}_v${file.version}`,
+        title: `${style.charAt(0).toUpperCase() + style.slice(1)} Lo-Fi #${taskId.slice(0, 4)}`,
+        style,
+        url: file.url,
+        createdAt: new Date().toISOString(),
+      }))
+      .filter((track) => !existingIds.has(track.id));
+
+    if (newTracks.length > 0) {
+      localStorage.setItem('neural-lofi-tracks', JSON.stringify([...newTracks, ...existingTracks]));
+      window.dispatchEvent(new Event('storage'));
+    }
   }, []);
 
   const pollStatus = useCallback(
