@@ -13,12 +13,13 @@ const styles: MusicStyle[] = ['classic', 'indian', 'african', 'asian', 'latino']
 
 export function StyleSelector({ selected, onSelect, disabled }: StyleSelectorProps) {
   return (
-    <div className="space-y-3">
-      <div className="section-title">Select Style</div>
-      <div className="grid grid-cols-2 gap-3">
+    <div>
+      <div className="section-title">Musical Style</div>
+      <div className="style-grid">
         {styles.map((style) => {
           const config = STYLE_CONFIG[style];
           const isSelected = selected === style;
+          const isLatino = style === 'latino';
 
           return (
             <button
@@ -26,21 +27,13 @@ export function StyleSelector({ selected, onSelect, disabled }: StyleSelectorPro
               onClick={() => onSelect(style)}
               disabled={disabled}
               className={cn(
-                'flex flex-col items-center gap-2 p-4 rounded-lg border transition-all duration-300',
-                'bg-white/[0.03] border-white/[0.08] hover:bg-white/[0.07] hover:-translate-y-0.5',
-                'disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0',
-                isSelected && 'style-card-selected'
+                'style-card',
+                isSelected && 'selected',
+                isLatino && 'style-card-span-2',
+                disabled && 'opacity-50 cursor-not-allowed'
               )}
             >
-              <span
-                className={cn(
-                  'text-2xl transition-transform duration-300',
-                  isSelected && 'scale-110'
-                )}
-              >
-                {config.icon}
-              </span>
-              <span className="text-sm font-medium">{config.label.split(' ')[0]}</span>
+              {config.icon} {config.label.split(' ')[0]}
             </button>
           );
         })}

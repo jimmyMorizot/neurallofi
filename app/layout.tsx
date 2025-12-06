@@ -29,14 +29,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="fr" className="dark">
+    <html lang="fr" className="dark" suppressHydrationWarning>
       <body
         className={`${jetbrainsMono.variable} font-mono antialiased bg-neural-gradient`}
+        suppressHydrationWarning
       >
         <TooltipProvider delayDuration={300}>
-          {/* Scanlines overlay */}
-          <div className="scanlines pointer-events-none" />
-
           {children}
         </TooltipProvider>
       </body>

@@ -20,27 +20,21 @@ export function StatusConsole({ messages, showCursor = true }: StatusConsoleProp
   }, [messages]);
 
   return (
-    <div
-      ref={containerRef}
-      className="bg-black border border-white/10 rounded-md p-4 min-h-[100px] max-h-[150px] overflow-y-auto font-mono text-xs"
-    >
+    <div ref={containerRef} className="status-console">
       {messages.length === 0 ? (
-        <div className="console-line info">
-          <span>&gt;</span>
-          <span>Waiting for input</span>
-          {showCursor && <span className="cursor-blink">_</span>}
+        <div className="line">
+          &gt; System Ready{showCursor && <span className="cursor-blink">_</span>}
         </div>
       ) : (
         <>
           {messages.map((message) => (
-            <div key={message.id} className={cn('console-line', message.type)}>
-              <span>&gt;</span>
-              <span>{message.text}</span>
+            <div key={message.id} className={cn('line', message.type)}>
+              &gt; {message.text}
             </div>
           ))}
           {showCursor && (
-            <div className="console-line">
-              <span className="cursor-blink">_</span>
+            <div className="line">
+              &gt; <span className="cursor-blink">_</span>
             </div>
           )}
         </>

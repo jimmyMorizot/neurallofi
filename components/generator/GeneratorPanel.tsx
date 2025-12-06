@@ -1,8 +1,6 @@
 'use client';
 
 import { useState, useCallback } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Progress } from '@/components/ui/progress';
 import { StyleSelector } from './StyleSelector';
 import { TextureSelector } from './TextureSelector';
 import { GenerateButton } from './GenerateButton';
@@ -44,41 +42,47 @@ export function GeneratorPanel({ onGenerationComplete }: GeneratorPanelProps) {
   const isLoading = status === 'pending' || status === 'processing';
 
   return (
-    <Card className="glass border-white/[0.08] bg-black/50">
-      <CardHeader className="pb-4">
-        <CardTitle className="text-[var(--neon-cyan)] font-mono text-lg font-normal">
-          // GENERATE
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-6">
-        <StyleSelector
-          selected={selectedStyle}
-          onSelect={setSelectedStyle}
-          disabled={isLoading}
-        />
+    <div className="flex flex-col gap-8 h-full">
+      {/* Style Selection */}
+      <StyleSelector
+        selected={selectedStyle}
+        onSelect={setSelectedStyle}
+        disabled={isLoading}
+      />
 
-        <TextureSelector
-          selected={selectedTextures}
-          onToggle={handleTextureToggle}
-          disabled={isLoading}
-        />
+      {/* Texture Selection */}
+      <TextureSelector
+        selected={selectedTextures}
+        onToggle={handleTextureToggle}
+        disabled={isLoading}
+      />
 
-        <GenerateButton
-          onClick={handleGenerate}
-          isLoading={isLoading}
-        />
+      {/* Spacer to push button to bottom */}
+      <div className="flex-1" />
 
-        {isLoading && eta > 0 && (
-          <div className="space-y-2">
-            <Progress value={progress} className="h-2" />
-            <p className="text-xs text-muted-foreground text-center">
-              ETA: {eta}s remaining
-            </p>
+      {/* Generate Button */}
+      <GenerateButton
+        onClick={handleGenerate}
+        isLoading={isLoading}
+      />
+
+      {/* Progress info */}
+      {isLoading && eta > 0 && (
+        <div className="text-center">
+          <div className="progress-bar mb-2">
+            <div
+              className="progress-bar-fill"
+              style={{ width: `${progress}%` }}
+            />
           </div>
-        )}
+          <p className="text-xs text-muted">
+            ETA: {eta}s remaining
+          </p>
+        </div>
+      )}
 
-        <StatusConsole messages={messages} showCursor={!isLoading} />
-      </CardContent>
-    </Card>
+      {/* Console */}
+      <StatusConsole messages={messages} showCursor={!isLoading} />
+    </div>
   );
 }

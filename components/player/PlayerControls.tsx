@@ -1,7 +1,6 @@
 'use client';
 
 import { Play, Pause, SkipBack, SkipForward } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
 interface PlayerControlsProps {
@@ -20,44 +19,34 @@ export function PlayerControls({
   disabled,
 }: PlayerControlsProps) {
   return (
-    <div className="flex items-center gap-4">
-      <Button
-        variant="ghost"
-        size="icon"
+    <div className="player-buttons">
+      <button
         onClick={onPrevious}
         disabled={disabled}
-        className="text-muted-foreground hover:text-white hover:bg-transparent"
+        className={cn('player-btn', disabled && 'opacity-50 cursor-not-allowed')}
       >
         <SkipBack className="h-5 w-5" />
-      </Button>
+      </button>
 
-      <Button
-        size="icon"
+      <button
         onClick={onPlayPause}
         disabled={disabled}
-        className={cn(
-          'w-10 h-10 rounded-full bg-white text-black',
-          'hover:bg-[var(--neon-cyan)] hover:shadow-[0_0_15px_var(--neon-cyan)]',
-          'transition-all duration-200',
-          'disabled:opacity-50'
-        )}
+        className={cn('player-btn player-btn-main', disabled && 'opacity-50 cursor-not-allowed')}
       >
         {isPlaying ? (
-          <Pause className="h-4 w-4" />
+          <Pause className="h-6 w-6" />
         ) : (
-          <Play className="h-4 w-4 ml-0.5" />
+          <Play className="h-6 w-6 ml-0.5" />
         )}
-      </Button>
+      </button>
 
-      <Button
-        variant="ghost"
-        size="icon"
+      <button
         onClick={onNext}
         disabled={disabled}
-        className="text-muted-foreground hover:text-white hover:bg-transparent"
+        className={cn('player-btn', disabled && 'opacity-50 cursor-not-allowed')}
       >
         <SkipForward className="h-5 w-5" />
-      </Button>
+      </button>
     </div>
   );
 }

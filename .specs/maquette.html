@@ -3,957 +3,320 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Neural_Lofi - Reference Design</title>
-    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <title>Neural_Lofi - Fixed Layout</title>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700;800&display=swap" rel="stylesheet">
     <style>
         /* =========================================
-           GLOBAL CONFIGURATION & VARIABLES
-           Reference for: tailwind.config.ts
+           VARIABLES (CYBERPUNK PALETTE)
            ========================================= */
         :root {
-            /* Palette Neural_Lofi */
-            --bg-primary: #0a0a0f;
-            --bg-surface: #12121a;
-            --bg-glass: rgba(18, 18, 26, 0.65);
-            --border: rgba(255, 255, 255, 0.08);
+            --bg-deep: #050511;
+            --bg-sidebar: #0b0c24;
+            --bg-surface: #151636;
             
-            /* Accents Neon */
-            --cyan: #00f0ff;
-            --magenta: #ff00aa;
-            --purple: #8b5cf6;
-            --green: #00ff88;
-            --orange: #ff9900;
+            --cyan-ice: #6fe7f3;
+            --blue-electric: #3a86ff;
+            --pink-neon: #f72585;
+            --purple-deep: #560bad;
             
-            /* Typography */
+            --sidebar-width: 300px;
+            --player-height: 80px;
+            
             --font-mono: 'JetBrains Mono', monospace;
-            
-            /* Dimensions */
-            --player-height: 90px;
-            --sidebar-width: 360px;
         }
 
         /* =========================================
-           RESET & BASE STYLES
-           Reference for: globals.css
+           RESET & BASE
            ========================================= */
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        
         body {
             font-family: var(--font-mono);
-            background-color: var(--bg-primary);
-            color: #ffffff;
+            background-color: var(--bg-deep);
+            color: #e0e7ff;
+            /* Le fond "Cyberpunk" sombre */
+            background: radial-gradient(circle at 50% -20%, #1a1b4b 0%, var(--bg-deep) 60%);
             min-height: 100vh;
-            overflow-x: hidden;
-            position: relative;
         }
 
-        /* Background Gradient Animation */
-        body::before {
-            content: '';
-            position: fixed;
-            top: -50%;
-            left: -50%;
-            width: 200%;
-            height: 200%;
-            background: radial-gradient(circle at center, rgba(139, 92, 246, 0.08) 0%, transparent 40%),
-                        radial-gradient(circle at 80% 20%, rgba(0, 240, 255, 0.05) 0%, transparent 30%);
-            animation: bg-shift 20s ease-in-out infinite alternate;
-            z-index: -2;
-            pointer-events: none;
-        }
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: var(--bg-deep); }
+        ::-webkit-scrollbar-thumb { background: var(--blue-electric); border-radius: 3px; }
 
-        /* Scanlines Overlay (CRT Effect) */
-        .scanlines {
+        /* =========================================
+           LAYOUT SYSTEM (CRITIQUE : FIXE LE LAYOUT)
+           ========================================= */
+        
+        /* 1. SIDEBAR (Le menu de gauche) */
+        .sidebar {
             position: fixed;
             top: 0;
             left: 0;
+            width: var(--sidebar-width);
+            height: calc(100vh - var(--player-height)); /* S'arrête avant le player */
+            background: var(--bg-sidebar);
+            border-right: 1px solid rgba(111, 231, 243, 0.1);
+            overflow-y: auto;
+            z-index: 50;
+            padding: 2rem;
+            display: none; /* Caché par défaut sur Mobile */
+        }
+
+        /* 2. MAIN CONTENT (La zone bibliothèque) */
+        .main-content {
             width: 100%;
-            height: 100%;
-            background: repeating-linear-gradient(
-                0deg,
-                transparent,
-                transparent 2px,
-                rgba(0, 0, 0, 0.1) 2px,
-                rgba(0, 0, 0, 0.1) 4px
-            );
-            pointer-events: none;
-            z-index: 9999;
-            opacity: 0.6;
-        }
-
-        /* Scrollbar styling */
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-track { background: var(--bg-primary); }
-        ::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
-        ::-webkit-scrollbar-thumb:hover { background: var(--purple); }
-
-        /* =========================================
-           LAYOUT ARCHITECTURE
-           Reference for: layout.tsx & page.tsx
-           ========================================= */
-        .app-layout {
-            display: grid;
-            grid-template-columns: 1fr;
-            grid-template-rows: auto 1fr auto;
+            padding: 2rem;
+            padding-bottom: 120px; /* Espace pour le player */
             min-height: 100vh;
-            padding-bottom: var(--player-height); /* Space for fixed player */
         }
 
-        /* Desktop Layout (MD breakpoint equivalent) */
-        @media (min-width: 768px) {
-            .app-layout {
-                grid-template-columns: var(--sidebar-width) 1fr;
-                grid-template-rows: auto 1fr;
-                height: 100vh;
-                padding-bottom: 0;
-                overflow: hidden;
-            }
-
-            .mobile-header { display: none; }
-            
-            .generator-panel {
-                height: 100%;
-                overflow-y: auto;
-                border-right: 1px solid var(--border);
-            }
-
-            .library-section {
-                height: 100%;
-                overflow-y: auto;
-                padding-bottom: var(--player-height);
-            }
-        }
-
-        /* =========================================
-           UTILITY CLASSES (Tailwind Abstractions)
-           ========================================= */
-        .glass {
-            background: var(--bg-glass);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border: 1px solid var(--border);
-        }
-
-        .text-glow { text-shadow: 0 0 10px rgba(0, 240, 255, 0.5); }
-        .text-cyan { color: var(--cyan); }
-        .text-magenta { color: var(--magenta); }
-        .text-purple { color: var(--purple); }
-        
-        .badge {
-            font-size: 0.7rem;
-            padding: 2px 8px;
-            border-radius: 4px;
-            text-transform: uppercase;
-            font-weight: 700;
-            border: 1px solid transparent;
-        }
-
-        /* =========================================
-           COMPONENT: Header (Mobile only mostly)
-           ========================================= */
+        /* 3. MOBILE HEADER (La barre du haut sur téléphone) */
         .mobile-header {
-            padding: 1rem;
-            border-bottom: 1px solid var(--border);
+            height: 60px;
             display: flex;
-            justify-content: center;
             align-items: center;
+            justify-content: center;
+            background: var(--bg-sidebar);
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 40;
         }
 
+        /* =========================================
+           RESPONSIVE LOGIC (C'est ici que ça se joue)
+           ========================================= */
+        @media (min-width: 1024px) {
+            /* Sur Desktop : */
+            
+            /* 1. On affiche la sidebar à gauche */
+            .sidebar { display: flex; flex-direction: column; gap: 2rem; }
+            
+            /* 2. On cache le header mobile (Adieu le double logo) */
+            .mobile-header { display: none !important; }
+            
+            /* 3. On pousse le contenu vers la droite pour laisser la place à la sidebar */
+            .main-content {
+                margin-left: var(--sidebar-width);
+                width: calc(100% - var(--sidebar-width));
+            }
+        }
+
+        /* =========================================
+           COMPONENTS
+           ========================================= */
+        
+        /* LOGO STYLE */
         .logo {
-            font-weight: 700;
-            font-size: 1.2rem;
+            font-size: 1.5rem;
+            font-weight: 800;
             letter-spacing: -1px;
-            background: linear-gradient(90deg, #fff, var(--cyan));
+            background: linear-gradient(90deg, var(--cyan-ice), var(--pink-neon));
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-            position: relative;
+            text-shadow: 0 0 15px rgba(58, 134, 255, 0.4);
         }
 
-        /* =========================================
-           COMPONENT: GeneratorPanel.tsx
-           ========================================= */
-        .generator-panel {
-            padding: 1.5rem;
-            display: flex;
-            flex-direction: column;
-            gap: 2rem;
-            background: rgba(10, 10, 15, 0.5);
-        }
-
+        /* SECTION TITLES */
         .section-title {
-            font-size: 0.85rem;
-            color: #666;
-            margin-bottom: 1rem;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-        .section-title::before { content: '//'; color: var(--cyan); }
-
-        /* StyleSelector.tsx */
-        .style-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 0.75rem;
+            font-size: 0.7rem; color: #94a3b8; margin-bottom: 1rem;
+            text-transform: uppercase; letter-spacing: 2px;
+            border-left: 2px solid var(--pink-neon);
+            padding-left: 0.5rem;
         }
 
-        .style-card {
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            padding: 1rem;
-            cursor: pointer;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .style-card:hover {
-            background: rgba(255, 255, 255, 0.07);
-            transform: translateY(-2px);
-        }
-
-        .style-card.selected {
-            border-color: var(--cyan);
-            box-shadow: 0 0 15px rgba(0, 240, 255, 0.2);
-            background: rgba(0, 240, 255, 0.05);
-        }
-        .style-card.selected .icon { transform: scale(1.1); }
-
-        .style-card .icon { font-size: 1.5rem; transition: transform 0.3s; }
-        .style-card .label { font-size: 0.8rem; font-weight: 500; }
-
-        /* TextureSelector.tsx */
-        .texture-container {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 0.75rem;
-        }
-
-        .texture-toggle {
-            flex: 1 1 45%;
-            background: transparent;
-            border: 1px solid var(--border);
-            color: #888;
-            padding: 0.6rem;
-            border-radius: 6px;
-            cursor: pointer;
-            font-family: var(--font-mono);
-            font-size: 0.8rem;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            transition: all 0.2s;
-        }
-
-        .texture-toggle:hover { color: #fff; border-color: #444; }
+        /* CARDS & INTERACTIVE */
+        .style-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.8rem; }
         
-        .texture-toggle.active {
-            border-color: var(--magenta);
-            color: var(--magenta);
-            background: rgba(255, 0, 170, 0.05);
-            box-shadow: 0 0 10px rgba(255, 0, 170, 0.15);
+        .style-card {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.1);
+            padding: 1rem; border-radius: 8px;
+            cursor: pointer; text-align: center;
+            transition: 0.2s;
         }
+        .style-card:hover { border-color: var(--cyan-ice); background: rgba(111, 231, 243, 0.05); }
+        .style-card.selected { border-color: var(--cyan-ice); background: rgba(111, 231, 243, 0.15); box-shadow: 0 0 15px rgba(111, 231, 243, 0.1); }
 
-        /* GenerateButton.tsx */
         .btn-generate {
-            width: 100%;
-            padding: 1rem;
-            background: linear-gradient(90deg, rgba(0,240,255,0.1), rgba(139,92,246,0.1));
-            border: 1px solid var(--cyan);
-            color: var(--cyan);
-            font-family: var(--font-mono);
-            font-weight: 700;
-            font-size: 1rem;
-            border-radius: 8px;
-            cursor: pointer;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            transition: all 0.3s;
-            position: relative;
-            overflow: hidden;
+            width: 100%; padding: 1rem;
+            background: transparent;
+            border: 1px solid var(--blue-electric);
+            color: var(--blue-electric);
+            font-weight: 700; cursor: pointer;
+            text-transform: uppercase; letter-spacing: 2px;
+            transition: 0.3s;
+            box-shadow: 0 0 10px rgba(58, 134, 255, 0.1);
         }
-
         .btn-generate:hover {
-            background: var(--cyan);
-            color: #000;
-            box-shadow: 0 0 20px rgba(0, 240, 255, 0.6);
+            background: var(--blue-electric); color: #fff;
+            box-shadow: 0 0 25px rgba(58, 134, 255, 0.5);
         }
 
-        .btn-generate.loading {
-            pointer-events: none;
-            border-color: #444;
-            color: #888;
-            background: rgba(0,0,0,0.3);
-            animation: pulse-border 2s infinite;
-        }
-
-        /* StatusConsole.tsx */
         .status-console {
             background: #000;
             border: 1px solid #333;
-            border-radius: 6px;
-            padding: 1rem;
-            font-size: 0.75rem;
-            min-height: 100px;
-            display: flex;
-            flex-direction: column;
-            justify-content: flex-end;
-            gap: 0.25rem;
-            opacity: 0.8;
+            padding: 1rem; font-size: 0.7rem; color: var(--cyan-ice);
+            font-family: monospace;
+            min-height: 80px;
         }
 
-        .console-line { display: flex; gap: 0.5rem; }
-        .console-line.success { color: var(--green); }
-        .console-line.process { color: var(--cyan); }
-        .console-line.error { color: var(--magenta); }
-        .cursor { animation: blink 1s step-end infinite; }
-
-        /* =========================================
-           COMPONENT: Library.tsx
-           ========================================= */
-        .library-section {
-            padding: 1.5rem;
-        }
-        
-        /* Desktop header in library */
-        .library-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 2rem;
-            display: none;
-        }
-        @media (min-width: 768px) { .library-header { display: flex; } }
-
+        /* TRACKS GRID */
         .tracks-grid {
             display: grid;
-            grid-template-columns: 1fr;
-            gap: 1rem;
-        }
-
-        @media (min-width: 1024px) {
-            .tracks-grid { grid-template-columns: repeat(2, 1fr); }
-        }
-        @media (min-width: 1400px) {
-            .tracks-grid { grid-template-columns: repeat(3, 1fr); }
-        }
-
-        /* TrackCard.tsx */
-        .track-card {
-            position: relative;
-            display: flex;
-            flex-direction: column;
-            padding: 1.25rem;
-            border-radius: 12px;
-            transition: all 0.3s ease;
-            overflow: hidden;
-        }
-
-        .track-card:hover {
-            transform: translateY(-4px);
-            border-color: rgba(255, 255, 255, 0.2);
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-        }
-
-        .track-card.playing {
-            border-color: var(--cyan);
-            box-shadow: 0 0 15px rgba(0, 240, 255, 0.15), inset 0 0 20px rgba(0, 240, 255, 0.05);
-        }
-        
-        .track-card.playing::before {
-            content: '';
-            position: absolute;
-            left: 0; top: 0; bottom: 0; width: 4px;
-            background: var(--cyan);
-            box-shadow: 0 0 10px var(--cyan);
-        }
-
-        .track-info { margin-bottom: 1rem; }
-        
-        .track-title {
-            font-weight: 700;
-            font-size: 1rem;
-            margin-bottom: 0.5rem;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-        
-        .track-meta {
-            display: flex;
-            gap: 0.5rem;
-            font-size: 0.7rem;
-            color: #888;
-            align-items: center;
-        }
-
-        .track-badges {
-            display: flex;
-            gap: 0.5rem;
-            margin-bottom: 1rem;
-        }
-
-        .track-actions {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-top: auto;
-        }
-
-        .btn-icon {
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            color: #fff;
-            width: 36px;
-            height: 36px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .btn-icon:hover { background: #fff; color: #000; }
-        
-        .btn-play {
-            width: 42px; height: 42px;
-            background: var(--purple);
-            border-color: var(--purple);
-        }
-        .btn-play:hover { background: var(--cyan); border-color: var(--cyan); box-shadow: 0 0 15px var(--cyan); }
-
-        /* =========================================
-           COMPONENT: PlayerBar.tsx
-           ========================================= */
-        .player-bar {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            height: var(--player-height);
-            background: rgba(10, 10, 15, 0.95);
-            backdrop-filter: blur(20px);
-            border-top: 1px solid var(--border);
-            display: grid;
-            grid-template-columns: 20% 1fr 20%;
-            align-items: center;
-            padding: 0 2rem;
-            z-index: 100;
-        }
-
-        @media (max-width: 768px) {
-            .player-bar {
-                grid-template-columns: 1fr auto;
-                grid-template-rows: auto auto;
-                height: auto;
-                padding: 1rem;
-                gap: 1rem;
-            }
-            .player-volume { display: none; }
-            .player-info { grid-column: 1 / -1; }
-        }
-
-        /* Player Info */
-        .player-info {
-            display: flex;
-            flex-direction: column;
-        }
-        .player-track-title { font-weight: 700; font-size: 0.9rem; margin-bottom: 0.2rem; }
-        .player-track-status { font-size: 0.7rem; color: var(--cyan); display: flex; align-items: center; gap: 0.5rem; }
-        
-        /* Player Controls */
-        .player-center {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 0.5rem;
-            width: 100%;
-            max-width: 600px;
-            margin: 0 auto;
-        }
-
-        .controls-row {
-            display: flex;
-            align-items: center;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
             gap: 1.5rem;
         }
 
-        .btn-control {
-            background: none;
-            border: none;
-            color: #aaa;
-            cursor: pointer;
-            font-size: 1.2rem;
-            transition: color 0.2s;
+        .track-card {
+            background: rgba(21, 22, 54, 0.6);
+            border: 1px solid rgba(255,255,255,0.05);
+            padding: 1.5rem; border-radius: 12px;
+            position: relative; overflow: hidden;
+            backdrop-filter: blur(10px);
         }
-        .btn-control:hover { color: #fff; text-shadow: 0 0 8px rgba(255,255,255,0.5); }
-        .btn-control.main-play {
-            width: 40px; height: 40px;
-            border-radius: 50%;
-            background: #fff;
-            color: #000;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1rem;
-        }
-        .btn-control.main-play:hover { background: var(--cyan); box-shadow: 0 0 15px var(--cyan); }
+        .track-card:hover { transform: translateY(-3px); border-color: var(--blue-electric); }
+        .track-card.playing { border-color: var(--pink-neon); box-shadow: 0 0 20px rgba(247, 37, 133, 0.2); }
 
-        /* Progress Bar */
-        .progress-container {
-            width: 100%;
-            display: flex;
-            align-items: center;
-            gap: 0.8rem;
-            font-size: 0.7rem;
-            color: #666;
+        .track-title { font-weight: 700; margin-bottom: 0.5rem; }
+        .badge { font-size: 0.6rem; padding: 2px 6px; border-radius: 4px; border: 1px solid; margin-right: 5px;}
+
+        /* PLAYER BAR (FIXED BOTTOM) */
+        .player-bar {
+            position: fixed;
+            bottom: 0; left: 0; width: 100%;
+            height: var(--player-height);
+            background: rgba(5, 5, 17, 0.95);
+            border-top: 1px solid rgba(255,255,255,0.1);
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 0 2rem;
+            z-index: 100;
+            backdrop-filter: blur(20px);
         }
 
-        .progress-bar-bg {
-            flex-grow: 1;
-            height: 4px;
-            background: rgba(255,255,255,0.1);
-            border-radius: 2px;
-            position: relative;
-            cursor: pointer;
-        }
-
-        .progress-bar-fill {
-            position: absolute;
-            left: 0; top: 0; bottom: 0;
-            width: 45%; /* Demo value */
-            background: linear-gradient(90deg, var(--purple), var(--cyan));
-            border-radius: 2px;
-            box-shadow: 0 0 10px rgba(0, 240, 255, 0.4);
+        /* UTILS */
+        .scanlines {
+            position: fixed; inset: 0; pointer-events: none; z-index: 999;
+            background: repeating-linear-gradient(to bottom, transparent 0px, transparent 2px, rgba(0,0,0,0.1) 3px);
         }
         
-        .progress-bar-fill::after {
-            content: '';
-            position: absolute;
-            right: -4px;
-            top: -3px;
-            width: 10px; height: 10px;
-            background: #fff;
-            border-radius: 50%;
-            box-shadow: 0 0 10px #fff;
-            opacity: 0;
-            transition: opacity 0.2s;
-        }
-        
-        .progress-container:hover .progress-bar-fill::after { opacity: 1; }
-
-        /* Visualizer */
-        .player-volume {
-            display: flex;
-            justify-content: flex-end;
-            align-items: center;
-            gap: 1rem;
-        }
-
-        .visualizer {
-            display: flex;
-            gap: 3px;
-            height: 30px;
-            align-items: flex-end;
-        }
-        
-        .bar {
-            width: 4px;
-            background: var(--magenta);
-            animation: bars-dance 0.8s ease-in-out infinite alternate;
-        }
-        .bar:nth-child(1) { height: 40%; animation-delay: 0.1s; background: var(--purple); }
-        .bar:nth-child(2) { height: 70%; animation-delay: 0.2s; }
-        .bar:nth-child(3) { height: 100%; animation-delay: 0.0s; background: var(--cyan); }
-        .bar:nth-child(4) { height: 60%; animation-delay: 0.3s; }
-        .bar:nth-child(5) { height: 30%; animation-delay: 0.15s; background: var(--purple); }
-
-        /* =========================================
-           ANIMATIONS
-           ========================================= */
-        @keyframes bg-shift {
-            0% { transform: translate(0, 0); }
-            100% { transform: translate(50px, 50px); }
-        }
-
-        @keyframes pulse-border {
-            0% { box-shadow: 0 0 0 0 rgba(0, 240, 255, 0.4); }
-            70% { box-shadow: 0 0 0 10px rgba(0, 240, 255, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(0, 240, 255, 0); }
-        }
-
-        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
-
-        @keyframes bars-dance {
-            0% { height: 10%; }
-            100% { height: 100%; }
-        }
-
     </style>
 </head>
 <body>
     <div class="scanlines"></div>
 
-    <div class="app-layout">
+    <!-- 1. HEADER MOBILE (Visible uniquement sur mobile) -->
+    <header class="mobile-header">
+        <div class="logo">NEURAL_LOFI</div>
+    </header>
+
+    <!-- 2. SIDEBAR (Le menu de gauche - Visible uniquement sur Desktop via CSS) -->
+    <aside class="sidebar">
+        <div class="logo" style="margin-bottom: 2rem;">NEURAL_LOFI</div>
         
-        <!-- HEADER (Mobile) -->
-        <header class="mobile-header glass">
-            <div class="logo">NEURAL_LOFI</div>
-        </header>
+        <!-- Style Selector -->
+        <div>
+            <div class="section-title">Musical Style</div>
+            <div class="style-grid">
+                <div class="style-card selected">🎹 Classic</div>
+                <div class="style-card">🪷 Indian</div>
+                <div class="style-card">🥁 African</div>
+                <div class="style-card">🎋 Asian</div>
+                <div class="style-card" style="grid-column: span 2;">🌴 Latino</div>
+            </div>
+        </div>
 
-        <!-- GENERATOR SIDEBAR -->
-        <aside class="generator-panel">
+        <!-- Textures -->
+        <div style="margin-top: 2rem;">
+            <div class="section-title">Textures</div>
+            <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                <button class="style-card" style="padding: 0.5rem 1rem;">🌧️ Rain</button>
+                <button class="style-card" style="padding: 0.5rem 1rem; border-color: var(--pink-neon); color: var(--pink-neon);">📀 Vinyl</button>
+            </div>
+        </div>
+
+        <!-- Action -->
+        <div style="margin-top: auto;">
+            <button class="btn-generate">INITIALIZE AI</button>
+        </div>
+
+        <!-- Console -->
+        <div class="status-console" style="margin-top: 1rem;">
+            > System Ready_<br>
+            > Waiting for input...
+        </div>
+    </aside>
+
+    <!-- 3. MAIN CONTENT (Le contenu principal) -->
+    <main class="main-content">
+        <h2 style="font-weight: 300; letter-spacing: 2px; margin-bottom: 2rem; color: #fff;">// LIBRARY_DATABASE</h2>
+        
+        <div class="tracks-grid">
+            <!-- Track 1 -->
+            <div class="track-card playing">
+                <div class="track-title">Cyber City Night #A1</div>
+                <span class="badge" style="color: var(--cyan-ice); border-color: var(--cyan-ice);">CLASSIC</span>
+                <span class="badge" style="color: #aaa; border-color: #555;">V1</span>
+                <div style="margin-top: 1rem; font-size: 0.8rem; color: #888; display: flex; justify-content: space-between;">
+                    <span>2025-01-15</span>
+                    <span style="color: var(--pink-neon);">PLAYING</span>
+                </div>
+            </div>
+
+            <!-- Track 2 -->
+            <div class="track-card">
+                <div class="track-title">Neon Rain Protocol</div>
+                <span class="badge" style="color: var(--purple-deep); border-color: var(--purple-deep);">INDIAN</span>
+                <span class="badge" style="color: #aaa; border-color: #555;">V2</span>
+                <div style="margin-top: 1rem; font-size: 0.8rem; color: #888; display: flex; justify-content: space-between;">
+                    <span>2025-01-14</span>
+                    <span>▶ 3:12</span>
+                </div>
+            </div>
+
+            <!-- Track 3 -->
+            <div class="track-card">
+                <div class="track-title">Tokyo Drift Lofi</div>
+                <span class="badge" style="color: var(--blue-electric); border-color: var(--blue-electric);">ASIAN</span>
+                <span class="badge" style="color: #aaa; border-color: #555;">V1</span>
+                <div style="margin-top: 1rem; font-size: 0.8rem; color: #888; display: flex; justify-content: space-between;">
+                    <span>2025-01-13</span>
+                    <span>▶ 2:45</span>
+                </div>
+            </div>
             
-            <!-- HEADER (Desktop) -->
-            <div class="logo" style="display: none; padding-bottom: 1rem; border-bottom: 1px solid var(--border); margin-bottom: 1rem;">NEURAL_LOFI</div>
-            <script>if(window.innerWidth >= 768) document.querySelector('.generator-panel .logo').style.display = 'block';</script>
-
-            <!-- STYLE SELECTOR -->
-            <div>
-                <div class="section-title">Select Style</div>
-                <div class="style-grid">
-                    <div class="style-card selected" onclick="selectStyle(this)">
-                        <span class="icon">🎹</span>
-                        <span class="label">Classic</span>
-                    </div>
-                    <div class="style-card" onclick="selectStyle(this)">
-                        <span class="icon">🪷</span>
-                        <span class="label">Indian</span>
-                    </div>
-                    <div class="style-card" onclick="selectStyle(this)">
-                        <span class="icon">🥁</span>
-                        <span class="label">African</span>
-                    </div>
-                    <div class="style-card" onclick="selectStyle(this)">
-                        <span class="icon">🎋</span>
-                        <span class="label">Asian</span>
-                    </div>
-                    <div class="style-card" onclick="selectStyle(this)">
-                        <span class="icon">🌴</span>
-                        <span class="label">Latino</span>
-                    </div>
+            <!-- Track 4 -->
+            <div class="track-card">
+                <div class="track-title">Sunset Vibes</div>
+                <span class="badge" style="color: var(--pink-neon); border-color: var(--pink-neon);">LATINO</span>
+                <span class="badge" style="color: #aaa; border-color: #555;">V1</span>
+                <div style="margin-top: 1rem; font-size: 0.8rem; color: #888; display: flex; justify-content: space-between;">
+                    <span>2025-01-13</span>
+                    <span>▶ 2:45</span>
                 </div>
             </div>
+        </div>
+    </main>
 
-            <!-- TEXTURE SELECTOR -->
-            <div>
-                <div class="section-title">Add Textures</div>
-                <div class="texture-container">
-                    <button class="texture-toggle active" onclick="toggleTexture(this)">
-                        <span>🌧️</span> Rain
-                    </button>
-                    <button class="texture-toggle" onclick="toggleTexture(this)">
-                        <span>📀</span> Vinyl
-                    </button>
-                    <button class="texture-toggle" onclick="toggleTexture(this)">
-                        <span>🌃</span> City
-                    </button>
-                    <button class="texture-toggle" onclick="toggleTexture(this)">
-                        <span>⌨️</span> Typing
-                    </button>
-                </div>
+    <!-- 4. FOOTER PLAYER -->
+    <footer class="player-bar">
+        <div style="width: 200px;">
+            <div style="font-weight: 700; font-size: 0.9rem;">Cyber City Night</div>
+            <div style="font-size: 0.7rem; color: var(--cyan-ice);">Playing...</div>
+        </div>
+        
+        <div style="flex: 1; display: flex; flex-direction: column; align-items: center; max-width: 600px;">
+            <div style="font-size: 1.5rem; margin-bottom: 5px;">⏮ ❚❚ ⏭</div>
+            <div style="width: 100%; height: 4px; background: #333; position: relative;">
+                <div style="width: 40%; height: 100%; background: linear-gradient(90deg, var(--cyan-ice), var(--pink-neon)); box-shadow: 0 0 10px var(--pink-neon);"></div>
             </div>
+        </div>
 
-            <!-- GENERATE ACTION -->
-            <div>
-                <button id="btnGenerate" class="btn-generate" onclick="startGeneration()">
-                    Initiate Sequence
-                </button>
-            </div>
+        <div style="width: 200px; text-align: right; color: var(--blue-electric);">
+            🔊 VOLUME
+        </div>
+    </footer>
 
-            <!-- CONSOLE -->
-            <div class="status-console">
-                <div class="console-line success"><span>></span> System ready</div>
-                <div class="console-line"><span>></span> Audio context initialized</div>
-                <div class="console-line"><span>></span> Waiting for input<span class="cursor">_</span></div>
-            </div>
-
-        </aside>
-
-        <!-- MAIN LIBRARY -->
-        <main class="library-section">
-            <header class="library-header">
-                <h2 style="font-weight: 300; letter-spacing: 2px;">// LIBRARY_DATABASE</h2>
-                <div style="font-size: 0.8rem; color: #666;">6 Tracks found</div>
-            </header>
-
-            <div class="tracks-grid">
-                <!-- Track 1: Classic v1 (Playing) -->
-                <div class="track-card glass playing">
-                    <div class="track-info">
-                        <div class="track-title">Classic Lo-Fi #a1b2</div>
-                        <div class="track-badges">
-                            <span class="badge" style="border-color: var(--cyan); color: var(--cyan);">Classic</span>
-                            <span class="badge" style="border-color: #666; color: #aaa;">v1</span>
-                        </div>
-                        <div class="track-meta">
-                            <span>📅 2025-01-15</span>
-                            <span>•</span>
-                            <span>⏱ 2:34</span>
-                        </div>
-                    </div>
-                    <div class="track-actions">
-                        <button class="btn-icon">⬇</button>
-                        <button class="btn-icon btn-play" onclick="togglePlayCard(this)">❚❚</button>
-                    </div>
-                </div>
-
-                <!-- Track 2: Classic v2 -->
-                <div class="track-card glass">
-                    <div class="track-info">
-                        <div class="track-title">Classic Lo-Fi #a1b2</div>
-                        <div class="track-badges">
-                            <span class="badge" style="border-color: var(--cyan); color: var(--cyan);">Classic</span>
-                            <span class="badge" style="border-color: #666; color: #aaa;">v2</span>
-                        </div>
-                        <div class="track-meta">
-                            <span>📅 2025-01-15</span>
-                            <span>•</span>
-                            <span>⏱ 2:41</span>
-                        </div>
-                    </div>
-                    <div class="track-actions">
-                        <button class="btn-icon">⬇</button>
-                        <button class="btn-icon btn-play" onclick="togglePlayCard(this)">▶</button>
-                    </div>
-                </div>
-
-                <!-- Track 3: Indian v1 -->
-                <div class="track-card glass">
-                    <div class="track-info">
-                        <div class="track-title">Indian Lo-Fi #x7y8</div>
-                        <div class="track-badges">
-                            <span class="badge" style="border-color: var(--orange); color: var(--orange);">Indian</span>
-                            <span class="badge" style="border-color: #666; color: #aaa;">v1</span>
-                        </div>
-                        <div class="track-meta">
-                            <span>📅 2025-01-14</span>
-                            <span>•</span>
-                            <span>⏱ 3:12</span>
-                        </div>
-                    </div>
-                    <div class="track-actions">
-                        <button class="btn-icon">⬇</button>
-                        <button class="btn-icon btn-play" onclick="togglePlayCard(this)">▶</button>
-                    </div>
-                </div>
-
-                 <!-- Track 4: Indian v2 -->
-                 <div class="track-card glass">
-                    <div class="track-info">
-                        <div class="track-title">Indian Lo-Fi #x7y8</div>
-                        <div class="track-badges">
-                            <span class="badge" style="border-color: var(--orange); color: var(--orange);">Indian</span>
-                            <span class="badge" style="border-color: #666; color: #aaa;">v2</span>
-                        </div>
-                        <div class="track-meta">
-                            <span>📅 2025-01-14</span>
-                            <span>•</span>
-                            <span>⏱ 2:58</span>
-                        </div>
-                    </div>
-                    <div class="track-actions">
-                        <button class="btn-icon">⬇</button>
-                        <button class="btn-icon btn-play" onclick="togglePlayCard(this)">▶</button>
-                    </div>
-                </div>
-
-                <!-- Track 5: Asian v1 -->
-                <div class="track-card glass">
-                    <div class="track-info">
-                        <div class="track-title">Asian Lo-Fi #p9q8</div>
-                        <div class="track-badges">
-                            <span class="badge" style="border-color: var(--green); color: var(--green);">Asian</span>
-                            <span class="badge" style="border-color: #666; color: #aaa;">v1</span>
-                        </div>
-                        <div class="track-meta">
-                            <span>📅 2025-01-13</span>
-                            <span>•</span>
-                            <span>⏱ 2:45</span>
-                        </div>
-                    </div>
-                    <div class="track-actions">
-                        <button class="btn-icon">⬇</button>
-                        <button class="btn-icon btn-play" onclick="togglePlayCard(this)">▶</button>
-                    </div>
-                </div>
-
-                <!-- Track 6: Latino v1 -->
-                <div class="track-card glass">
-                    <div class="track-info">
-                        <div class="track-title">Latino Lo-Fi #m5n6</div>
-                        <div class="track-badges">
-                            <span class="badge" style="border-color: var(--magenta); color: var(--magenta);">Latino</span>
-                            <span class="badge" style="border-color: #666; color: #aaa;">v1</span>
-                        </div>
-                        <div class="track-meta">
-                            <span>📅 2025-01-12</span>
-                            <span>•</span>
-                            <span>⏱ 3:05</span>
-                        </div>
-                    </div>
-                    <div class="track-actions">
-                        <button class="btn-icon">⬇</button>
-                        <button class="btn-icon btn-play" onclick="togglePlayCard(this)">▶</button>
-                    </div>
-                </div>
-
-            </div>
-        </main>
-
-        <!-- PLAYER BAR -->
-        <footer class="player-bar">
-            <!-- Info -->
-            <div class="player-info">
-                <div class="player-track-title">Classic Lo-Fi #a1b2</div>
-                <div class="player-track-status">
-                    <span style="width: 6px; height: 6px; background: var(--cyan); border-radius: 50%; box-shadow: 0 0 5px var(--cyan);"></span>
-                    PLAYING
-                </div>
-            </div>
-
-            <!-- Controls & Progress -->
-            <div class="player-center">
-                <div class="controls-row">
-                    <button class="btn-control">⏮</button>
-                    <button class="btn-control main-play" id="mainPlayBtn" onclick="toggleMainPlay()">❚❚</button>
-                    <button class="btn-control">⏭</button>
-                </div>
-                <div class="progress-container">
-                    <span>1:12</span>
-                    <div class="progress-bar-bg">
-                        <div class="progress-bar-fill"></div>
-                    </div>
-                    <span>2:34</span>
-                </div>
-            </div>
-
-            <!-- Visualizer & Volume -->
-            <div class="player-volume">
-                <div class="visualizer">
-                    <div class="bar"></div>
-                    <div class="bar"></div>
-                    <div class="bar"></div>
-                    <div class="bar"></div>
-                    <div class="bar"></div>
-                </div>
-                <div style="display: flex; align-items: center; gap: 0.5rem; color: #aaa;">
-                    <span>🔊</span>
-                    <div style="width: 80px; height: 3px; background: #333; position: relative;">
-                        <div style="width: 70%; height: 100%; background: #fff;"></div>
-                    </div>
-                </div>
-            </div>
-        </footer>
-    </div>
-
-    <script>
-        // === INTERACTION LOGIC (Demo Only) ===
-
-        // 1. Style Selection
-        function selectStyle(element) {
-            document.querySelectorAll('.style-card').forEach(el => el.classList.remove('selected'));
-            element.classList.add('selected');
-        }
-
-        // 2. Texture Toggle
-        function toggleTexture(element) {
-            element.classList.toggle('active');
-        }
-
-        // 3. Generate Simulation
-        function startGeneration() {
-            const btn = document.getElementById('btnGenerate');
-            const consoleDiv = document.querySelector('.status-console');
-            
-            if (btn.classList.contains('loading')) return;
-
-            // UI State
-            btn.classList.add('loading');
-            btn.innerHTML = 'PROCESSING...';
-            
-            // Console Updates
-            const steps = [
-                { text: '> Connecting to MusicGPT...', type: 'process' },
-                { text: '> Analyzing style parameters...', type: 'process' },
-                { text: '> Generating waveform...', type: 'process' },
-                { text: '> Mastering audio tracks...', type: 'process' },
-                { text: '> SEQUENCE COMPLETE', type: 'success' }
-            ];
-
-            let step = 0;
-            consoleDiv.innerHTML = ''; // Clear
-
-            const interval = setInterval(() => {
-                if (step < steps.length) {
-                    const line = document.createElement('div');
-                    line.className = `console-line ${steps[step].type}`;
-                    line.innerHTML = `<span>></span> ${steps[step].text}`;
-                    consoleDiv.appendChild(line);
-                    
-                    // Keep cursor at bottom
-                    const cursor = document.createElement('div');
-                    cursor.innerHTML = '<span class="cursor">_</span>';
-                    // Remove old cursor
-                    const oldCursor = consoleDiv.querySelector('.cursor')?.parentNode;
-                    if(oldCursor) oldCursor.remove();
-                    
-                    consoleDiv.appendChild(cursor);
-                    step++;
-                } else {
-                    clearInterval(interval);
-                    btn.classList.remove('loading');
-                    btn.innerHTML = 'INITIATE SEQUENCE';
-                }
-            }, 800);
-        }
-
-        // 4. Play Logic (Visual only)
-        function togglePlayCard(btn) {
-            const card = btn.closest('.track-card');
-            const isPlaying = card.classList.contains('playing');
-            
-            // Reset all others
-            document.querySelectorAll('.track-card').forEach(c => {
-                c.classList.remove('playing');
-                c.querySelector('.btn-play').innerText = '▶';
-            });
-
-            if (!isPlaying) {
-                card.classList.add('playing');
-                btn.innerText = '❚❚';
-                document.getElementById('mainPlayBtn').innerText = '❚❚';
-                document.querySelector('.player-track-status').style.opacity = '1';
-                document.querySelectorAll('.bar').forEach(b => b.style.animationPlayState = 'running');
-            } else {
-                document.getElementById('mainPlayBtn').innerText = '▶';
-                document.querySelector('.player-track-status').style.opacity = '0.5';
-                document.querySelectorAll('.bar').forEach(b => b.style.animationPlayState = 'paused');
-            }
-        }
-
-        function toggleMainPlay() {
-            const btn = document.getElementById('mainPlayBtn');
-            const bars = document.querySelectorAll('.bar');
-            
-            if (btn.innerText === '❚❚') {
-                btn.innerText = '▶';
-                bars.forEach(b => b.style.animationPlayState = 'paused');
-            } else {
-                btn.innerText = '❚❚';
-                bars.forEach(b => b.style.animationPlayState = 'running');
-            }
-        }
-    </script>
 </body>
 </html>
