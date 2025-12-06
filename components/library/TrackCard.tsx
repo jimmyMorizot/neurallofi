@@ -1,6 +1,6 @@
 'use client';
 
-import { Play, Pause } from 'lucide-react';
+import { Play, Pause, Download } from 'lucide-react';
 import { cn, formatDate } from '@/lib/utils';
 import type { Track, MusicStyle } from '@/types';
 import { STYLE_CONFIG } from '@/types';
@@ -45,26 +45,38 @@ export function TrackCard({ track, isPlaying, onPlay, onPause }: TrackCardProps)
         </span>
       </div>
 
-      {/* Footer: Date + Status/Play */}
+      {/* Footer: Date + Actions */}
       <div className="flex justify-between items-center text-sm text-muted">
         <span>{formatDate(track.date)}</span>
-        {isPlaying ? (
-          <button
-            onClick={onPause}
-            className="text-pink hover:opacity-80 transition-opacity flex items-center gap-1"
+        <div className="flex items-center gap-3">
+          {/* Download button */}
+          <a
+            href={track.url}
+            download={track.filename}
+            className="hover:text-blue transition-colors"
+            title="Download MP3"
           >
-            <Pause className="h-3 w-3" />
-            <span>PLAYING</span>
-          </button>
-        ) : (
-          <button
-            onClick={onPlay}
-            className="hover:text-cyan transition-colors flex items-center gap-1"
-          >
-            <Play className="h-3 w-3" />
-            <span>Play</span>
-          </button>
-        )}
+            <Download className="h-3 w-3" />
+          </a>
+          {/* Play/Pause button */}
+          {isPlaying ? (
+            <button
+              onClick={onPause}
+              className="text-pink hover:opacity-80 transition-opacity flex items-center gap-1"
+            >
+              <Pause className="h-3 w-3" />
+              <span>PLAYING</span>
+            </button>
+          ) : (
+            <button
+              onClick={onPlay}
+              className="hover:text-cyan transition-colors flex items-center gap-1"
+            >
+              <Play className="h-3 w-3" />
+              <span>Play</span>
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );

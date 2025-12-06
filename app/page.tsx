@@ -25,6 +25,7 @@ export default function Home() {
     setPlaylist,
     next,
     previous,
+    getFrequencyData,
   } = useAudioPlayer();
 
   // Update playlist when tracks change
@@ -91,6 +92,7 @@ export default function Home() {
         onNext={next}
         onSeek={seek}
         onVolumeChange={setVolume}
+        getFrequencyData={getFrequencyData}
       />
     </>
   );

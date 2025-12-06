@@ -17,6 +17,7 @@ interface PlayerBarProps {
   onNext: () => void;
   onSeek: (progress: number) => void;
   onVolumeChange: (volume: number) => void;
+  getFrequencyData?: () => number[];
 }
 
 export function PlayerBar({
@@ -30,6 +31,7 @@ export function PlayerBar({
   onNext,
   onSeek,
   onVolumeChange,
+  getFrequencyData,
 }: PlayerBarProps) {
   const hasTrack = currentTrack !== null;
 
@@ -68,7 +70,7 @@ export function PlayerBar({
 
       {/* Right: Volume + Visualizer */}
       <div className="player-volume hidden lg:flex">
-        <Visualizer isPlaying={isPlaying && hasTrack} />
+        <Visualizer isPlaying={isPlaying && hasTrack} getFrequencyData={getFrequencyData} />
         <VolumeControl
           volume={volume}
           onVolumeChange={onVolumeChange}
