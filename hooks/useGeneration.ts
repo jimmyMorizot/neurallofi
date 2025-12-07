@@ -177,12 +177,12 @@ export function useGeneration(options: UseGenerationOptions = {}): UseGeneration
   const runMockGeneration = useCallback(
     async (taskId: string, style: MusicStyle) => {
       const steps = [
-        { delay: 1000, progress: 'Connecting to MusicGPT...' },
-        { delay: 1500, progress: 'Analyzing style parameters...' },
-        { delay: 2000, progress: 'Generating waveform...' },
-        { delay: 2000, progress: 'Applying textures...' },
-        { delay: 1500, progress: 'Mastering audio tracks...' },
-        { delay: 1000, progress: 'Finalizing...' },
+        { delay: 500, progress: 'Connecting to MusicGPT...' },
+        { delay: 800, progress: 'Analyzing style parameters...' },
+        { delay: 1000, progress: 'Generating waveform...' },
+        { delay: 1000, progress: 'Applying textures...' },
+        { delay: 800, progress: 'Mastering audio tracks...' },
+        { delay: 500, progress: 'Finalizing...' },
       ];
 
       let currentProgress = 0;
