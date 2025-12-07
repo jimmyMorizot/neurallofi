@@ -126,16 +126,23 @@ export async function checkStatus(conversionId: string): Promise<{
     const apiStatus = conv.status?.toUpperCase();
     console.log('[MusicGPT] Direct status check:', apiStatus);
 
-    // Check if completed (only return first version)
+    // Check if completed (return both versions per spec)
     if (apiStatus === 'COMPLETED' && conv.conversion_path_1) {
       console.log('[MusicGPT] Generation complete!');
+
+      const files: { url: string; version: number }[] = [
+        { url: conv.conversion_path_1, version: 1 },
+      ];
+
+      // Add second version if available
+      if (conv.conversion_path_2) {
+        files.push({ url: conv.conversion_path_2, version: 2 });
+      }
 
       return {
         status: 'completed',
         progress: 'Generation complete!',
-        files: [
-          { url: conv.conversion_path_1, version: 1 },
-        ],
+        files,
       };
     }
 

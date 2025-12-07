@@ -2,17 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
-import type { Track, MusicStyle } from '@/types';
-
-const STORAGE_KEY = 'neural-lofi-tracks';
-
-interface StoredTrack {
-  id: string;
-  title: string;
-  style: MusicStyle;
-  url: string;
-  createdAt: string;
-}
+import type { Track } from '@/types';
 
 interface UseLibraryReturn {
   tracks: Track[];
@@ -31,52 +21,52 @@ export function useLibrary(): UseLibraryReturn {
   const [isImporting, setIsImporting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const loadFromLocalStorage = useCallback(() => {
-    try {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored) {
-        const storedTracks: StoredTrack[] = JSON.parse(stored);
-        // Convert to Track format
-        const converted: Track[] = storedTracks.map((t) => ({
-          id: t.id,
-          taskId: t.id.split('_')[0],
-          title: t.title,
-          style: t.style,
-          version: 1,
-          filename: t.id + '.mp3',
-          url: t.url,
-          date: new Date(t.createdAt),
-          size: '0 KB',
-        }));
-        setTracks(converted);
-      }
-    } catch (err) {
-      console.error('Error loading from localStorage:', err);
-    }
-  }, []);
-
   const fetchLibrary = useCallback(async () => {
     setIsLoading(true);
     setError(null);
 
-    // Load from localStorage (works on Vercel)
-    loadFromLocalStorage();
+    try {
+      // Fetch tracks from Vercel Blob via API
+      const response = await fetch('/api/library');
+      if (!response.ok) {
+        throw new Error('Failed to fetch library');
+      }
 
-    setIsLoading(false);
-  }, [loadFromLocalStorage]);
+      const data = await response.json();
+
+      // Convert date strings to Date objects
+      const tracksWithDates: Track[] = data.map((track: Track & { date: string }) => ({
+        ...track,
+        date: new Date(track.date),
+      }));
+
+      setTracks(tracksWithDates);
+    } catch (err) {
+      console.error('Error fetching library:', err);
+      setError(err instanceof Error ? err.message : 'Unknown error');
+      // Set empty array on error
+      setTracks([]);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
 
   const deleteTrack = useCallback(async (track: Track): Promise<boolean> => {
     try {
-      // Remove from localStorage
-      const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored) {
-        const storedTracks: StoredTrack[] = JSON.parse(stored);
-        const filtered = storedTracks.filter((t) => t.id !== track.id);
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(filtered));
+      // Delete from Vercel Blob via API
+      const response = await fetch(
+        `/api/library/${encodeURIComponent(track.filename)}?url=${encodeURIComponent(track.url)}`,
+        { method: 'DELETE' }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to delete track');
       }
 
-      // Remove from local state
+      // Remove from local state immediately for responsive UI
       setTracks((prev) => prev.filter((t) => t.id !== track.id));
+
       toast.success('Track deleted', {
         description: track.title,
       });
@@ -90,8 +80,8 @@ export function useLibrary(): UseLibraryReturn {
     }
   }, []);
 
-  const importTrack = useCallback(async (file: File): Promise<boolean> => {
-    // Import is disabled on Vercel
+  const importTrack = useCallback(async (_file: File): Promise<boolean> => {
+    // Import is disabled - tracks are generated via MusicGPT
     toast.error('Import disabled', {
       description: 'Use the AI generator to create tracks!',
     });
@@ -129,15 +119,15 @@ export function useLibrary(): UseLibraryReturn {
     fetchLibrary();
   }, [fetchLibrary]);
 
-  // Listen for storage changes (when new tracks are added)
+  // Listen for custom event when new tracks are uploaded
   useEffect(() => {
-    const handleStorage = () => {
-      loadFromLocalStorage();
+    const handleTracksUpdated = () => {
+      fetchLibrary();
     };
 
-    window.addEventListener('storage', handleStorage);
-    return () => window.removeEventListener('storage', handleStorage);
-  }, [loadFromLocalStorage]);
+    window.addEventListener('tracks-updated', handleTracksUpdated);
+    return () => window.removeEventListener('tracks-updated', handleTracksUpdated);
+  }, [fetchLibrary]);
 
   return {
     tracks,

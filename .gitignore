@@ -47,3 +47,4 @@ public/generated/music/*.mp3
 
 # task cache (serverless state persistence)
 .cache/
+.env*.local

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { deleteFile, fileExists } from '@/lib/filesystem';
+import { deleteTrackFromBlob } from '@/lib/blob';
 
 interface RouteParams {
   params: Promise<{ filename: string }>;
@@ -25,17 +25,18 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
       );
     }
 
-    // Check if file exists
-    const exists = await fileExists(filename);
-    if (!exists) {
+    // Get blob URL from query params (needed for Vercel Blob deletion)
+    const blobUrl = request.nextUrl.searchParams.get('url');
+
+    if (!blobUrl) {
       return NextResponse.json(
-        { error: 'Track not found' },
-        { status: 404 }
+        { error: 'Blob URL is required' },
+        { status: 400 }
       );
     }
 
-    // Delete the file
-    const deleted = await deleteFile(filename);
+    // Delete from Vercel Blob
+    const deleted = await deleteTrackFromBlob(blobUrl);
 
     if (!deleted) {
       return NextResponse.json(

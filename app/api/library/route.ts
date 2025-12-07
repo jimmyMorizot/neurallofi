@@ -1,11 +1,10 @@
 import { NextResponse } from 'next/server';
-import { getAllCompletedTracks } from '@/lib/taskCache';
+import { listTracksFromBlob } from '@/lib/blob';
 
 export async function GET() {
   try {
-    // On Vercel, we can't scan filesystem (read-only)
-    // Return tracks from completed generation tasks in memory
-    const tracks = await getAllCompletedTracks();
+    // List all tracks from Vercel Blob Storage
+    const tracks = await listTracksFromBlob();
 
     return NextResponse.json(tracks);
   } catch (error) {

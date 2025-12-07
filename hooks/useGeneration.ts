@@ -11,8 +11,11 @@ import type {
 } from '@/types';
 import { generateId } from '@/lib/utils';
 
-// Mock sample URL (single track per generation)
-const MOCK_SAMPLE_URL = 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3';
+// Mock sample URLs (for local dev without API key)
+const MOCK_SAMPLE_URLS = [
+  'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
+  'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3',
+];
 
 interface UseGenerationOptions {
   onComplete?: () => void;
@@ -74,26 +77,38 @@ export function useGeneration(options: UseGenerationOptions = {}): UseGeneration
     }
   }, []);
 
-  const saveTracksToLocalStorage = useCallback((taskId: string, style: MusicStyle, files: { url: string; version: number }[]) => {
-    const existingTracks = JSON.parse(localStorage.getItem('neural-lofi-tracks') || '[]');
-    const existingIds = new Set(existingTracks.map((t: { id: string }) => t.id));
+  // Upload tracks to Vercel Blob Storage
+  const uploadTracksToBlob = useCallback(
+    async (taskId: string, style: MusicStyle, files: { url: string; version: number }[]) => {
+      try {
+        addMessage('Uploading to cloud storage...', 'process');
 
-    // Only add tracks that don't already exist (prevent duplicates)
-    const newTracks = files
-      .map((file) => ({
-        id: `${taskId}_v${file.version}`,
-        title: `${style.charAt(0).toUpperCase() + style.slice(1)} Lo-Fi #${taskId.slice(0, 4)}`,
-        style,
-        url: file.url,
-        createdAt: new Date().toISOString(),
-      }))
-      .filter((track) => !existingIds.has(track.id));
+        const response = await fetch('/api/library/upload', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ taskId, style, files }),
+        });
 
-    if (newTracks.length > 0) {
-      localStorage.setItem('neural-lofi-tracks', JSON.stringify([...newTracks, ...existingTracks]));
-      window.dispatchEvent(new Event('storage'));
-    }
-  }, []);
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to upload tracks');
+        }
+
+        const result = await response.json();
+        console.log('[Generation] Uploaded tracks:', result.tracks);
+
+        // Dispatch event to refresh library
+        window.dispatchEvent(new Event('tracks-updated'));
+
+        addMessage(`${result.tracks.length} track(s) saved to library`, 'success');
+      } catch (err) {
+        console.error('[Generation] Upload error:', err);
+        addMessage('Failed to save tracks to cloud', 'error');
+        throw err;
+      }
+    },
+    [addMessage]
+  );
 
   const pollStatus = useCallback(
     async (taskId: string, conversionId: string, style: MusicStyle) => {
@@ -103,14 +118,17 @@ export function useGeneration(options: UseGenerationOptions = {}): UseGeneration
 
         if (data.status === 'completed') {
           stopPolling();
-          setStatus('completed');
-          setProgress(100);
-          setEta(0);
+          setProgress(95);
           addMessage('SEQUENCE COMPLETE', 'success');
 
           if (data.files && data.files.length > 0) {
-            saveTracksToLocalStorage(taskId, style, data.files);
+            // Upload tracks to Vercel Blob
+            await uploadTracksToBlob(taskId, style, data.files);
           }
+
+          setStatus('completed');
+          setProgress(100);
+          setEta(0);
 
           toast.success('Track generated!', {
             description: 'Your Lo-Fi track is ready to play.',
@@ -153,7 +171,7 @@ export function useGeneration(options: UseGenerationOptions = {}): UseGeneration
         console.error('Polling error:', err);
       }
     },
-    [addMessage, onComplete, stopPolling, saveTracksToLocalStorage]
+    [addMessage, onComplete, stopPolling, uploadTracksToBlob]
   );
 
   const runMockGeneration = useCallback(
@@ -175,14 +193,20 @@ export function useGeneration(options: UseGenerationOptions = {}): UseGeneration
         addMessage(step.progress, 'process');
       }
 
-      // Complete with mock files
+      addMessage('SEQUENCE COMPLETE', 'success');
+
+      // Mock files: 2 versions per spec
+      const mockFiles = [
+        { url: MOCK_SAMPLE_URLS[0], version: 1 },
+        { url: MOCK_SAMPLE_URLS[1], version: 2 },
+      ];
+
+      // Upload mock tracks to Vercel Blob
+      await uploadTracksToBlob(taskId, style, mockFiles);
+
       setStatus('completed');
       setProgress(100);
       setEta(0);
-      addMessage('SEQUENCE COMPLETE', 'success');
-
-      const mockFiles = [{ url: MOCK_SAMPLE_URL, version: 1 }];
-      saveTracksToLocalStorage(taskId, style, mockFiles);
 
       toast.success('Track generated!', {
         description: 'Your Lo-Fi track is ready to play.',
@@ -192,7 +216,7 @@ export function useGeneration(options: UseGenerationOptions = {}): UseGeneration
         onComplete();
       }
     },
-    [addMessage, saveTracksToLocalStorage, onComplete]
+    [addMessage, uploadTracksToBlob, onComplete]
   );
 
   const generate = useCallback(
