@@ -3,7 +3,7 @@
 // ============================================
 
 // Music Generation Types
-export type MusicStyle = 'classic' | 'indian' | 'african' | 'asian' | 'latino';
+export type MusicStyle = 'classic' | 'indian' | 'african' | 'asian' | 'latino' | 'imported';
 
 export type TextureType = 'rain' | 'vinyl' | 'city' | 'typing';
 
@@ -113,6 +113,12 @@ export const STYLE_CONFIG: Record<MusicStyle, StyleConfig> = {
     color: 'pink',
     prompt: 'Bossa nova lo-fi, 85 BPM, nylon guitar, brushed drums, Brazilian percussion, sunset beach vibes, romantic',
   },
+  imported: {
+    label: 'Imported',
+    icon: '📁',
+    color: 'gray',
+    prompt: '',
+  },
 };
 
 // Texture Configuration - Short additions for MusicGPT prompt limit
@@ -146,6 +152,7 @@ export const STYLE_COLORS: Record<MusicStyle, string> = {
   african: 'text-yellow-400 border-yellow-400',
   asian: 'text-green-400 border-green-400',
   latino: 'text-pink-400 border-pink-400',
+  imported: 'text-gray-400 border-gray-400',
 };
 
 // Helper function to get style label

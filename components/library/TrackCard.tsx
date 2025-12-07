@@ -31,6 +31,7 @@ const BADGE_COLORS: Record<MusicStyle, string> = {
   african: 'badge-pink',
   asian: 'badge-blue',
   latino: 'badge-pink',
+  imported: 'badge-gray',
 };
 
 export function TrackCard({

@@ -80,13 +80,54 @@ export function useLibrary(): UseLibraryReturn {
     }
   }, []);
 
-  const importTrack = useCallback(async (_file: File): Promise<boolean> => {
-    // Import is disabled - tracks are generated via MusicGPT
-    toast.error('Import disabled', {
-      description: 'Use the AI generator to create tracks!',
-    });
-    return false;
-  }, []);
+  const importTrack = useCallback(async (file: File): Promise<boolean> => {
+    setIsImporting(true);
+    try {
+      // Validate file type client-side
+      if (!file.type.includes('audio/') && !file.name.endsWith('.mp3')) {
+        toast.error('Invalid file type', {
+          description: 'Only MP3 files are allowed.',
+        });
+        return false;
+      }
+
+      // Upload via FormData
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const response = await fetch('/api/library/import', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to import track');
+      }
+
+      const result = await response.json();
+
+      // Refresh library to show new track
+      await fetchLibrary();
+
+      toast.success('Track imported!', {
+        description: result.track.title,
+      });
+
+      // Dispatch event to notify other components
+      window.dispatchEvent(new Event('tracks-updated'));
+
+      return true;
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to import track';
+      toast.error('Import failed', {
+        description: message,
+      });
+      return false;
+    } finally {
+      setIsImporting(false);
+    }
+  }, [fetchLibrary]);
 
   const exportLibrary = useCallback(() => {
     const exportData = tracks.map((track) => ({

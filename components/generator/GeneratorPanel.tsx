@@ -1,13 +1,16 @@
 'use client';
 
 import { useState, useCallback } from 'react';
-import { Mic, MicOff } from 'lucide-react';
+import { Mic, MicOff, Key, Trash2 } from 'lucide-react';
 import { StyleSelector } from './StyleSelector';
 import { TextureSelector } from './TextureSelector';
 import { GenerateButton } from './GenerateButton';
 import { StatusConsole } from './StatusConsole';
+import { ApiKeyModal } from './ApiKeyModal';
 import { useGeneration } from '@/hooks/useGeneration';
+import { useApiKey } from '@/hooks/useApiKey';
 import type { MusicStyle, TextureType } from '@/types';
+import { toast } from 'sonner';
 
 interface GeneratorPanelProps {
   onGenerationComplete?: () => void;
@@ -18,6 +21,15 @@ export function GeneratorPanel({ onGenerationComplete }: GeneratorPanelProps) {
   const [selectedTextures, setSelectedTextures] = useState<TextureType[]>([]);
   const [withVocals, setWithVocals] = useState(false);
   const [customLyrics, setCustomLyrics] = useState('');
+  const [showApiKeyModal, setShowApiKeyModal] = useState(false);
+  const [creditsError, setCreditsError] = useState<string | null>(null);
+
+  const { apiKey, setApiKey, clearApiKey, hasApiKey } = useApiKey();
+
+  const handleCreditsExhausted = useCallback((errorMessage: string) => {
+    setCreditsError(errorMessage);
+    setShowApiKeyModal(true);
+  }, []);
 
   const {
     generate,
@@ -25,7 +37,10 @@ export function GeneratorPanel({ onGenerationComplete }: GeneratorPanelProps) {
     progress,
     messages,
     eta,
-  } = useGeneration({ onComplete: onGenerationComplete });
+  } = useGeneration({
+    onComplete: onGenerationComplete,
+    onCreditsExhausted: handleCreditsExhausted,
+  });
 
   const handleTextureToggle = useCallback((texture: TextureType) => {
     setSelectedTextures((prev) =>
@@ -41,8 +56,23 @@ export function GeneratorPanel({ onGenerationComplete }: GeneratorPanelProps) {
       textures: selectedTextures,
       withVocals,
       customLyrics: withVocals && customLyrics.trim() ? customLyrics.trim() : undefined,
+      userApiKey: apiKey || undefined,
     });
-  }, [generate, selectedStyle, selectedTextures, withVocals, customLyrics]);
+  }, [generate, selectedStyle, selectedTextures, withVocals, customLyrics, apiKey]);
+
+  const handleSaveApiKey = useCallback((key: string) => {
+    setApiKey(key);
+    toast.success('API Key Saved', {
+      description: 'Your key is stored locally and will be used for generation.',
+    });
+  }, [setApiKey]);
+
+  const handleClearApiKey = useCallback(() => {
+    clearApiKey();
+    toast.info('API Key Removed', {
+      description: 'Your API key has been removed from local storage.',
+    });
+  }, [clearApiKey]);
 
   const isLoading = status === 'pending' || status === 'processing';
 
@@ -100,6 +130,23 @@ export function GeneratorPanel({ onGenerationComplete }: GeneratorPanelProps) {
         )}
       </div>
 
+      {/* User API Key Status */}
+      {hasApiKey && (
+        <div className="api-key-status">
+          <div className="flex items-center gap-2 text-xs text-cyan-400">
+            <Key className="h-3 w-3" />
+            <span>Using your API key</span>
+          </div>
+          <button
+            onClick={handleClearApiKey}
+            className="text-xs text-gray-500 hover:text-red-400 flex items-center gap-1 transition-colors"
+            title="Remove API key"
+          >
+            <Trash2 className="h-3 w-3" />
+          </button>
+        </div>
+      )}
+
       {/* Spacer to push button to bottom */}
       <div className="flex-1" />
 
@@ -126,6 +173,14 @@ export function GeneratorPanel({ onGenerationComplete }: GeneratorPanelProps) {
 
       {/* Console */}
       <StatusConsole messages={messages} showCursor={!isLoading} />
+
+      {/* API Key Modal */}
+      <ApiKeyModal
+        open={showApiKeyModal}
+        onOpenChange={setShowApiKeyModal}
+        onSaveApiKey={handleSaveApiKey}
+        errorMessage={creditsError || undefined}
+      />
     </div>
   );
 }

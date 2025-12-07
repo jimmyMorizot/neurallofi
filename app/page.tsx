@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { Library as LibraryIcon, Sparkles } from 'lucide-react';
+import { useEffect, useState, useRef } from 'react';
+import { Library as LibraryIcon, Sparkles, Upload } from 'lucide-react';
 import { GeneratorPanel } from '@/components/generator/GeneratorPanel';
 import { Library } from '@/components/library/Library';
 import { PlayerBar } from '@/components/player/PlayerBar';
@@ -16,7 +16,8 @@ type MobileView = 'library' | 'create';
 export default function Home() {
   const [mobileView, setMobileView] = useState<MobileView>('library');
   const [showFavoritesFilter, setShowFavoritesFilter] = useState(false);
-  const { tracks, isLoading, refresh, deleteTrack } = useLibrary();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const { tracks, isLoading, isImporting, refresh, deleteTrack, importTrack } = useLibrary();
   const { favorites, isFavorite, toggleFavorite } = useFavorites();
   const {
     currentTrack,
@@ -46,6 +47,19 @@ export default function Home() {
     setMobileView('library');
   };
 
+  const handleImportClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      await importTrack(file);
+      // Reset input for same file re-upload
+      e.target.value = '';
+    }
+  };
+
   return (
     <>
       {/* Scanlines overlay */}
@@ -67,9 +81,29 @@ export default function Home() {
         <GeneratorPanel onGenerationComplete={handleGenerationComplete} />
       </aside>
 
+      {/* Hidden file input for import */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="audio/mpeg,.mp3"
+        onChange={handleFileChange}
+        className="hidden"
+      />
+
       {/* 3. MAIN CONTENT - Desktop always shows library */}
       <main className="main-content hidden lg:block">
-        <h2 className="library-title">Library</h2>
+        <div className="library-header-row">
+          <h2 className="library-title">Library</h2>
+          <button
+            className="import-button"
+            onClick={handleImportClick}
+            disabled={isImporting}
+            title="Import MP3"
+          >
+            <Upload className="h-4 w-4" />
+            <span>{isImporting ? 'Importing...' : 'Import'}</span>
+          </button>
+        </div>
         <Library
           tracks={tracks}
           currentTrackId={currentTrack?.id || null}
@@ -88,7 +122,18 @@ export default function Home() {
       <main className="mobile-content lg:hidden">
         {mobileView === 'library' ? (
           <>
-            <h2 className="library-title">Library</h2>
+            <div className="library-header-row">
+              <h2 className="library-title">Library</h2>
+              <button
+                className="import-button"
+                onClick={handleImportClick}
+                disabled={isImporting}
+                title="Import MP3"
+              >
+                <Upload className="h-4 w-4" />
+                <span>{isImporting ? 'Importing...' : 'Import'}</span>
+              </button>
+            </div>
             <Library
               tracks={tracks}
               currentTrackId={currentTrack?.id || null}

@@ -15,6 +15,7 @@ function getStyleLabel(style: MusicStyle): string {
     african: 'Afrobeats Lo-fi',
     asian: 'Asian Lo-fi',
     latino: 'Bossa Nova Lo-fi',
+    imported: 'Imported',
   };
   return labels[style];
 }
@@ -22,23 +23,29 @@ function getStyleLabel(style: MusicStyle): string {
 /**
  * Generate music using MusicGPT API
  * API Docs: https://docs.musicgpt.com/api-documentation/conversions/musicai
+ * @param userApiKey - Optional user-provided API key (stored in localStorage on client)
  */
 export async function generateMusic(
   style: MusicStyle,
   textures: TextureType[],
   withVocals: boolean = false,
-  customLyrics?: string
+  customLyrics?: string,
+  userApiKey?: string
 ): Promise<{ taskId: string; eta: number; mockMode?: boolean; conversionId?: string }> {
   const prompt = buildPrompt(style, textures);
 
   // Generate a unique local task ID
   const taskId = generateTaskId();
 
-  // Check if we should use mock mode
-  const apiKey = MUSICGPT_API_KEY?.trim() || '';
+  // Use user API key if provided, otherwise fall back to server key
+  const serverKey = MUSICGPT_API_KEY?.trim() || '';
+  const apiKey = userApiKey?.trim() || serverKey;
   const isValidApiKey = apiKey.length > 20 && !apiKey.includes('your_api_key');
+  const isUserKey = !!userApiKey?.trim();
 
-  console.log('[MusicGPT] API Key status:', isValidApiKey ? 'Valid key detected' : 'No valid key - using MOCK mode');
+  console.log('[MusicGPT] API Key status:', isValidApiKey
+    ? (isUserKey ? 'Using USER API key' : 'Using SERVER API key')
+    : 'No valid key - using MOCK mode');
 
   // If no valid API key, use mock mode - client will handle simulation
   if (!isValidApiKey) {
@@ -53,7 +60,7 @@ export async function generateMusic(
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': MUSICGPT_API_KEY, // No Bearer prefix per docs
+        'Authorization': apiKey, // Use effective API key (user or server)
       },
       body: JSON.stringify({
         prompt: prompt,

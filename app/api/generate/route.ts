@@ -1,10 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { generateMusic } from '@/lib/musicgpt';
-import type { GenerationRequest, GenerationResponse } from '@/types';
+import type { GenerationRequest } from '@/types';
+
+// Extended request type with optional user API key
+interface ExtendedGenerationRequest extends GenerationRequest {
+  userApiKey?: string;
+}
 
 export async function POST(request: NextRequest) {
   try {
-    const body: GenerationRequest = await request.json();
+    const body: ExtendedGenerationRequest = await request.json();
 
     // Validate request
     if (!body.style) {
@@ -26,9 +31,10 @@ export async function POST(request: NextRequest) {
     const textures = (body.textures || []).filter((t) => validTextures.includes(t));
     const withVocals = body.withVocals || false;
     const customLyrics = body.customLyrics?.trim().slice(0, 280) || undefined;
+    const userApiKey = body.userApiKey?.trim() || undefined;
 
-    // Generate music
-    const result = await generateMusic(body.style, textures, withVocals, customLyrics);
+    // Generate music (pass user API key if provided)
+    const result = await generateMusic(body.style, textures, withVocals, customLyrics, userApiKey);
 
     return NextResponse.json({
       taskId: result.taskId,
@@ -39,9 +45,22 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error('Error generating music:', error);
+
+    // Check for specific error types
+    const errorMessage = error instanceof Error ? error.message : 'Failed to start generation';
+    const isCreditsError = errorMessage.toLowerCase().includes('credit') ||
+                          errorMessage.toLowerCase().includes('quota') ||
+                          errorMessage.toLowerCase().includes('limit') ||
+                          errorMessage.toLowerCase().includes('insufficient') ||
+                          errorMessage.includes('402') ||
+                          errorMessage.includes('429');
+
     return NextResponse.json(
-      { error: 'Failed to start generation' },
-      { status: 500 }
+      {
+        error: errorMessage,
+        errorType: isCreditsError ? 'CREDITS_EXHAUSTED' : 'GENERATION_ERROR'
+      },
+      { status: isCreditsError ? 402 : 500 }
     );
   }
 }

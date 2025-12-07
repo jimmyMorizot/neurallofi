@@ -39,6 +39,7 @@ export function generateTitle(style: MusicStyle, taskId: string, version: number
     african: 'African',
     asian: 'Asian',
     latino: 'Latino',
+    imported: 'Imported',
   };
   return `${styleLabels[style]} Lo-Fi #${taskId.slice(0, 4)} (v${version})`;
 }

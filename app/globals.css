@@ -593,6 +593,11 @@ body {
   border-color: #555;
 }
 
+.badge-gray {
+  color: #9ca3af;
+  border-color: #9ca3af;
+}
+
 /* =========================================
    PROGRESS BAR
    ========================================= */
@@ -718,7 +723,52 @@ body {
 @media (max-width: 640px) {
   .library-title {
     font-size: 1rem;
-    margin-bottom: 1.5rem;
+    margin-bottom: 0;
+  }
+}
+
+/* Library header with Import button */
+.library-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.5rem;
+  gap: 1rem;
+}
+
+.import-button {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: rgba(111, 231, 243, 0.1);
+  border: 1px solid rgba(111, 231, 243, 0.3);
+  border-radius: 0.5rem;
+  color: var(--cyan-ice);
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.import-button:hover:not(:disabled) {
+  background: rgba(111, 231, 243, 0.2);
+  border-color: var(--cyan-ice);
+  box-shadow: 0 0 10px rgba(111, 231, 243, 0.3);
+}
+
+.import-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+@media (max-width: 640px) {
+  .import-button span {
+    display: none;
+  }
+
+  .import-button {
+    padding: 0.5rem;
   }
 }
 
@@ -1165,6 +1215,7 @@ body {
 .section-header.section-purple { border-left-color: var(--purple-deep); }
 .section-header.section-pink { border-left-color: var(--pink-neon); }
 .section-header.section-blue { border-left-color: var(--blue-electric); }
+.section-header.section-gray { border-left-color: #9ca3af; }
 
 .section-icon {
   font-size: 1.25rem;
@@ -1405,4 +1456,34 @@ body {
   .pwa-prompt-later {
     width: 100%;
   }
+}
+
+/* =========================================
+   API KEY MODAL
+   ========================================= */
+.api-key-modal {
+  background: var(--bg-sidebar);
+  border: 1px solid rgba(111, 231, 243, 0.2);
+  box-shadow:
+    0 0 40px rgba(111, 231, 243, 0.1),
+    0 0 80px rgba(247, 37, 133, 0.05);
+}
+
+.api-key-modal [data-slot="dialog-title"] {
+  font-family: var(--font-mono);
+}
+
+.api-key-modal [data-slot="dialog-description"] {
+  font-family: var(--font-mono);
+}
+
+/* API Key Status Indicator in Generator Panel */
+.api-key-status {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+  background: rgba(111, 231, 243, 0.05);
+  border: 1px solid rgba(111, 231, 243, 0.2);
+  border-radius: 8px;
 }

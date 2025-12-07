@@ -19,7 +19,7 @@ interface LibraryProps {
   showFavoritesOnly?: boolean;
 }
 
-const CATEGORY_ORDER: MusicStyle[] = ['classic', 'indian', 'african', 'asian', 'latino'];
+const CATEGORY_ORDER: MusicStyle[] = ['classic', 'indian', 'african', 'asian', 'latino', 'imported'];
 
 const SECTION_COLORS: Record<MusicStyle, string> = {
   classic: 'section-cyan',
@@ -27,6 +27,7 @@ const SECTION_COLORS: Record<MusicStyle, string> = {
   african: 'section-pink',
   asian: 'section-blue',
   latino: 'section-pink',
+  imported: 'section-gray',
 };
 
 export function Library({

@@ -116,6 +116,38 @@ export async function deleteTrackFromBlob(url: string): Promise<boolean> {
 }
 
 /**
+ * Import a user-uploaded MP3 file to Vercel Blob
+ * Uses 'imported' as style and generates a unique ID
+ */
+export async function importTrackToBlob(
+  fileBuffer: Buffer,
+  originalFilename: string
+): Promise<{ url: string; filename: string; taskId: string }> {
+  // Generate unique taskId for imported files
+  const taskId = `imp${Date.now().toString(36)}`;
+  const filename = `${taskId}_imported_v1.mp3`;
+
+  try {
+    // Upload to Vercel Blob
+    const result = await put(filename, fileBuffer, {
+      access: 'public',
+      contentType: 'audio/mpeg',
+    });
+
+    console.log(`[Blob] Imported ${originalFilename} as ${filename} to ${result.url}`);
+
+    return {
+      url: result.url,
+      filename,
+      taskId,
+    };
+  } catch (error) {
+    console.error(`[Blob] Error importing ${originalFilename}:`, error);
+    throw error;
+  }
+}
+
+/**
  * Format file size in human-readable format
  */
 function formatFileSize(bytes: number): string {

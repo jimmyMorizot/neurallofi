@@ -17,23 +17,30 @@ const MOCK_SAMPLE_URLS = [
   'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3',
 ];
 
+// Extended request with optional user API key
+interface ExtendedGenerationRequest extends GenerationRequest {
+  userApiKey?: string;
+}
+
 interface UseGenerationOptions {
   onComplete?: () => void;
+  onCreditsExhausted?: (errorMessage: string) => void;
   pollingInterval?: number;
 }
 
 interface UseGenerationReturn {
-  generate: (request: GenerationRequest) => Promise<void>;
+  generate: (request: ExtendedGenerationRequest) => Promise<void>;
   status: GenerationStatus;
   progress: number;
   eta: number;
   messages: ConsoleMessage[];
   error: string | null;
+  errorType: string | null;
   reset: () => void;
 }
 
 export function useGeneration(options: UseGenerationOptions = {}): UseGenerationReturn {
-  const { onComplete, pollingInterval = 3000 } = options;
+  const { onComplete, onCreditsExhausted, pollingInterval = 3000 } = options;
 
   const [status, setStatus] = useState<GenerationStatus>('idle');
   const [progress, setProgress] = useState(0);
@@ -53,6 +60,7 @@ export function useGeneration(options: UseGenerationOptions = {}): UseGeneration
     },
   ]);
   const [error, setError] = useState<string | null>(null);
+  const [errorType, setErrorType] = useState<string | null>(null);
 
   const pollingRef = useRef<NodeJS.Timeout | null>(null);
   const startTimeRef = useRef<number>(0);
@@ -220,12 +228,13 @@ export function useGeneration(options: UseGenerationOptions = {}): UseGeneration
   );
 
   const generate = useCallback(
-    async (request: GenerationRequest) => {
+    async (request: ExtendedGenerationRequest) => {
       try {
         // Reset state
         setStatus('pending');
         setProgress(0);
         setError(null);
+        setErrorType(null);
         setMessages([]);
 
         addMessage('Connecting to MusicGPT...', 'process');
@@ -236,12 +245,29 @@ export function useGeneration(options: UseGenerationOptions = {}): UseGeneration
           body: JSON.stringify(request),
         });
 
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.error || 'Failed to start generation');
-        }
-
         const data = await response.json();
+
+        if (!response.ok) {
+          // Check if this is a credits exhausted error
+          if (data.errorType === 'CREDITS_EXHAUSTED') {
+            setStatus('failed');
+            setError(data.error);
+            setErrorType('CREDITS_EXHAUSTED');
+            addMessage('API credits exhausted', 'error');
+
+            // Trigger callback to show API key modal
+            if (onCreditsExhausted) {
+              onCreditsExhausted(data.error);
+            }
+
+            toast.error('API Credits Exhausted', {
+              description: 'Add your own API key to continue generating music.',
+            });
+            return;
+          }
+
+          throw new Error(data.error || 'Failed to start generation');
+        }
 
         setStatus('processing');
         setEta(data.eta);
@@ -273,7 +299,7 @@ export function useGeneration(options: UseGenerationOptions = {}): UseGeneration
         });
       }
     },
-    [addMessage, pollStatus, pollingInterval, runMockGeneration]
+    [addMessage, pollStatus, pollingInterval, runMockGeneration, onCreditsExhausted]
   );
 
   const reset = useCallback(() => {
@@ -282,6 +308,7 @@ export function useGeneration(options: UseGenerationOptions = {}): UseGeneration
     setProgress(0);
     setEta(0);
     setError(null);
+    setErrorType(null);
     setMessages([
       {
         id: generateId(),
@@ -299,6 +326,7 @@ export function useGeneration(options: UseGenerationOptions = {}): UseGeneration
     eta,
     messages,
     error,
+    errorType,
     reset,
   };
 }
