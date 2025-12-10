@@ -23,7 +23,7 @@ export function VolumeControl({
   };
 
   return (
-    <div className="flex items-center gap-2">
+    <div className="volume-control-wrapper flex items-center gap-2">
       <Button
         variant="ghost"
         size="icon"

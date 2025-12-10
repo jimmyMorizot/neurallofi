@@ -69,7 +69,7 @@ export function PlayerBar({
       </div>
 
       {/* Right: Volume + Visualizer */}
-      <div className="player-volume hidden lg:flex">
+      <div className="player-volume">
         <Visualizer isPlaying={isPlaying && hasTrack} getFrequencyData={getFrequencyData} />
         <VolumeControl
           volume={volume}

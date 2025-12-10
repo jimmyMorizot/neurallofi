@@ -12,6 +12,7 @@ interface BeforeInstallPromptEvent extends Event {
 }
 
 const STORAGE_KEY = 'pwa-install-dismissed';
+const INSTALLED_KEY = 'pwa-installed';
 
 export function usePWAInstall() {
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
@@ -27,7 +28,10 @@ export function usePWAInstall() {
     const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
     const isIOSStandalone = (window.navigator as Navigator & { standalone?: boolean }).standalone === true;
 
-    if (isStandalone || isIOSStandalone) {
+    // Check if previously installed (persists even when visiting via browser)
+    const wasInstalled = localStorage.getItem(INSTALLED_KEY) === 'true';
+
+    if (isStandalone || isIOSStandalone || wasInstalled) {
       setIsInstalled(true);
       return;
     }
@@ -55,6 +59,7 @@ export function usePWAInstall() {
 
     // Listen for successful installation
     window.addEventListener('appinstalled', () => {
+      localStorage.setItem(INSTALLED_KEY, 'true');
       setIsInstalled(true);
       setCanInstall(false);
       setDeferredPrompt(null);
