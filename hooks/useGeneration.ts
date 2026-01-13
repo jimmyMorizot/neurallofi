@@ -24,7 +24,7 @@ interface ExtendedGenerationRequest extends GenerationRequest {
 
 interface UseGenerationOptions {
   onComplete?: () => void;
-  onCreditsExhausted?: (errorMessage: string) => void;
+  onCreditsExhausted?: () => void;
   pollingInterval?: number;
 }
 
@@ -257,7 +257,7 @@ export function useGeneration(options: UseGenerationOptions = {}): UseGeneration
 
             // Trigger callback to show API key modal
             if (onCreditsExhausted) {
-              onCreditsExhausted(data.error);
+              onCreditsExhausted();
             }
 
             toast.error('API Credits Exhausted', {

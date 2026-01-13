@@ -22,12 +22,10 @@ export function GeneratorPanel({ onGenerationComplete }: GeneratorPanelProps) {
   const [withVocals, setWithVocals] = useState(false);
   const [customLyrics, setCustomLyrics] = useState('');
   const [showApiKeyModal, setShowApiKeyModal] = useState(false);
-  const [creditsError, setCreditsError] = useState<string | null>(null);
 
   const { apiKey, setApiKey, clearApiKey, hasApiKey } = useApiKey();
 
-  const handleCreditsExhausted = useCallback((errorMessage: string) => {
-    setCreditsError(errorMessage);
+  const handleCreditsExhausted = useCallback(() => {
     setShowApiKeyModal(true);
   }, []);
 
@@ -179,7 +177,6 @@ export function GeneratorPanel({ onGenerationComplete }: GeneratorPanelProps) {
         open={showApiKeyModal}
         onOpenChange={setShowApiKeyModal}
         onSaveApiKey={handleSaveApiKey}
-        errorMessage={creditsError || undefined}
       />
     </div>
   );

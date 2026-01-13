@@ -53,7 +53,8 @@ export async function POST(request: NextRequest) {
                           errorMessage.toLowerCase().includes('limit') ||
                           errorMessage.toLowerCase().includes('insufficient') ||
                           errorMessage.includes('402') ||
-                          errorMessage.includes('429');
+                          errorMessage.includes('429') ||
+                          errorMessage.includes('500'); // MusicGPT returns 500 when credits are exhausted
 
     return NextResponse.json(
       {

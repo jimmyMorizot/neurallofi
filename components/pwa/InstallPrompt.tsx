@@ -48,7 +48,7 @@ export function InstallPrompt() {
       <button
         onClick={handleDismiss}
         className="pwa-prompt-close"
-        aria-label="Fermer"
+        aria-label="Close"
       >
         <X className="h-4 w-4" />
       </button>
@@ -76,9 +76,9 @@ export function InstallPrompt() {
 
       {/* Content */}
       <div className="pwa-prompt-content">
-        <h3 className="pwa-prompt-title">Installer Neural Lofi</h3>
+        <h3 className="pwa-prompt-title">Install Neural Lofi</h3>
         <p className="pwa-prompt-description">
-          Acces rapide et experience optimale, meme hors ligne
+          Quick access and optimal experience, even offline
         </p>
       </div>
 
@@ -86,10 +86,10 @@ export function InstallPrompt() {
       <div className="pwa-prompt-actions">
         <button onClick={handleInstall} className="pwa-prompt-install">
           <Download className="h-4 w-4" />
-          Installer
+          Install
         </button>
         <button onClick={handleDismiss} className="pwa-prompt-later">
-          Plus tard
+          Later
         </button>
       </div>
 
@@ -100,7 +100,7 @@ export function InstallPrompt() {
           checked={dontAskAgain}
           onChange={(e) => setDontAskAgain(e.target.checked)}
         />
-        <span>Ne plus me demander</span>
+        <span>Don&apos;t ask again</span>
       </label>
     </div>
   );
